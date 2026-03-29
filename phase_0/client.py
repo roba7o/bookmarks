@@ -5,7 +5,7 @@ mysock = socket.socket(socket.AF_INET, socket.SOCK_STREAM)
 # our params here tell the kernel what type of stuct to build in its internal memory
 
 mysock.connect(("127.0.0.1", 9000))  # TCP ESTABLISHED
-cmd = "GET / HTTP/1.0\r\n\r\n".encode()  # METHOD PATH VERSION
+cmd = "GET lower/ HTTP/1.0\r\n\r\n".encode()  # METHOD PATH VERSION
 mysock.send(cmd)
 
 while True:

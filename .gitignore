@@ -1,5 +1,7 @@
 /docs
 
+__pycache__/
+.DS_Store
 
 #claude skill to stop it writing code
 CLAUDE.md
