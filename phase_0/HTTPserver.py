@@ -18,6 +18,8 @@ bookmark_dict = {
 
 
 class MyHandler(BaseHTTPRequestHandler):
+    number_in_memory = 4
+
     def do_GET(self):
         if self.path == "/":
             self.send_response(200)
@@ -33,6 +35,23 @@ class MyHandler(BaseHTTPRequestHandler):
 
         else:
             self.send_error(404, "Not Found!")
+
+    def do_POST(self):
+        if self.path == "/bookmark/":
+            content_length = int(self.headers.get("Content-length", 0))
+            body = self.rfile.read(content_length)
+
+            try:
+                data = json.loads(body)
+                # normally would process the data
+                print(data)
+                bookmark_dict[MyHandler.number_in_memory] = data
+                MyHandler.number_in_memory += 1
+                self.send_response(201, "It uploaded -> try a get")
+            except json.JSONDecodeError:
+                self.send_error(400, "not allowed mate")
+        else:
+            self.send_error(404, "Not Found mate!")
 
 
 with HTTPServer(addr, MyHandler) as serverr:
