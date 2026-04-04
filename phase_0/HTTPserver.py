@@ -28,13 +28,11 @@ class MyHandler(BaseHTTPRequestHandler):
             self.end_headers()
             self.wfile.write(basic_200_body.encode("utf-8"))
 
-        elif self.path == "/bookmark/1":
-            print(f"range check {range(1, _SEQ)}")
+        elif self.path.startswith("/bookmark/"):
             route_number_split = self.path.split("/")
             dict_index = int(route_number_split[2])
             if dict_index not in range(1, _SEQ):
-                self.send_error("400", "Index doesnt count")
-
+                self.send_error("400", "Index broken")
             else:
                 body = json.dumps(bookmark_dict[dict_index])
                 self.send_response(200)
