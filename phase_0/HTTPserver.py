@@ -28,13 +28,20 @@ class MyHandler(BaseHTTPRequestHandler):
             self.end_headers()
             self.wfile.write(basic_200_body.encode("utf-8"))
 
-        elif self.path == "/bookmark/":
-            body = json.dumps(bookmark_dict)
-            self.send_response(200)
-            self.send_header("Content-type", "application/json")
-            self.send_header("Content-length", int(len(body)))
-            self.end_headers()
-            self.wfile.write(body.encode("utf-8"))
+        elif self.path == "/bookmark/1":
+            print(f"range check {range(1, _SEQ)}")
+            route_number_split = self.path.split("/")
+            dict_index = int(route_number_split[2])
+            if dict_index not in range(1, _SEQ):
+                self.send_error("400", "Index doesnt count")
+
+            else:
+                body = json.dumps(bookmark_dict[dict_index])
+                self.send_response(200)
+                self.send_header("Content-type", "application/json")
+                self.send_header("Content-length", int(len(body)))
+                self.end_headers()
+                self.wfile.write(body.encode("utf-8"))
 
         else:
             self.send_error(404, "Not Found!")
