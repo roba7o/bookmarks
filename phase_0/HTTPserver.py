@@ -42,11 +42,11 @@ class MyHandler(BaseHTTPRequestHandler):
                         self.end_headers()
                         self.wfile.write(body_json.encode("utf-8"))
                     except json.JSONDecodeError as json_e:
-                        print(f"jsondecode error as {json_e}")
+                        print(f"JSONDecodeError: {json_e}")
                 else:
                     return self.send_error(400, "Index out of range")
-            except TypeError as E:
-                print(f"Type error is: {E}")
+            except ValueError as E:
+                print(f"Value Error: {E}")
 
     # def do_POST(self):
     #     if self.path == "/bookmark/":
