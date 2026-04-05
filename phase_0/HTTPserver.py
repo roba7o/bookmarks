@@ -21,7 +21,7 @@ class MyHandler(BaseHTTPRequestHandler):
 
     def do_GET(self):
         if self.path == "/":
-            basic_200_body = "Welcome to the api!"
+            basic_200_body = "Welcome to the api! You are at the root page"
             self.send_response(200)
             self.send_header("Content-type", "application/json")
             self.send_header("Content-Length", int(len(basic_200_body)))
@@ -30,19 +30,30 @@ class MyHandler(BaseHTTPRequestHandler):
 
         elif self.path.startswith("/bookmark/"):
             route_number_split = self.path.split("/")
-            dict_index = int(route_number_split[2])
-            if dict_index not in range(1, _SEQ):
-                self.send_error("400", "Index broken")
-            else:
-                body = json.dumps(bookmark_dict[dict_index])
-                self.send_response(200)
-                self.send_header("Content-type", "application/json")
-                self.send_header("Content-length", int(len(body)))
-                self.end_headers()
-                self.wfile.write(body.encode("utf-8"))
+            print(f"route number index {route_number_split[2]}")
+            print(bookmark_dict.keys())
+            try:
+                dict_index = int(route_number_split[2])
+                print(f"type of number is {type(dict_index)}")
 
-        else:
-            self.send_error(404, "Not Found!")
+                if dict_index in bookmark_dict.keys():
+                    try:
+                        print("reached healthy 200 response")
+                        body = bookmark_dict[dict_index]
+                        print(f"index body is: {body}")
+                        body_json = str(json.dumps(body))
+                        self.send_response(200)
+                        self.send_header("Content-type", "application/json")
+                        self.send_header("Content-length", int(len(body_json)))
+                        self.end_headers()
+                        self.wfile.write(body_json.encode("utf-8"))
+                    except json.JSONDecodeError as json_e:
+                        print(f"jsondecode error as {json_e}")
+                else:
+                    print("debugging not in range")
+                    return self.send_error(400, "Index out of range")
+            except TypeError as E:
+                print(f"Type error is: {E}")
 
     # def do_POST(self):
     #     if self.path == "/bookmark/":
