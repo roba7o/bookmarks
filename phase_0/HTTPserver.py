@@ -30,17 +30,11 @@ class MyHandler(BaseHTTPRequestHandler):
 
         elif self.path.startswith("/bookmark/"):
             route_number_split = self.path.split("/")
-            print(f"route number index {route_number_split[2]}")
-            print(bookmark_dict.keys())
             try:
                 dict_index = int(route_number_split[2])
-                print(f"type of number is {type(dict_index)}")
-
                 if dict_index in bookmark_dict.keys():
                     try:
-                        print("reached healthy 200 response")
                         body = bookmark_dict[dict_index]
-                        print(f"index body is: {body}")
                         body_json = str(json.dumps(body))
                         self.send_response(200)
                         self.send_header("Content-type", "application/json")
@@ -50,7 +44,6 @@ class MyHandler(BaseHTTPRequestHandler):
                     except json.JSONDecodeError as json_e:
                         print(f"jsondecode error as {json_e}")
                 else:
-                    print("debugging not in range")
                     return self.send_error(400, "Index out of range")
             except TypeError as E:
                 print(f"Type error is: {E}")
