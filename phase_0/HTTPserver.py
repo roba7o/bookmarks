@@ -44,7 +44,7 @@ class MyHandler(BaseHTTPRequestHandler):
                     except json.JSONDecodeError as json_e:
                         print(f"JSONDecodeError: {json_e}")
                 else:
-                    return self.send_error(400, "Index out of range")
+                    return self.send_error(404, "Index out of range")
             except ValueError as E:
                 print(f"Value Error: {E}")
 
