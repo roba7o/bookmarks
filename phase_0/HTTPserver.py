@@ -27,9 +27,9 @@ class MyHandler(BaseHTTPRequestHandler):
     def do_GET(self):
         if self.path == "/":
             basic_200_body = (
-                "Welcome to the api! You are at the root page. "
-                "These are the following books stored on memory: "
-                f"{bookmark_dict}"
+                "Welcome to the api! You are at the root page. \n"
+                "These are the following books stored on memory: \n"
+                f"{json.dumps(bookmark_dict, indent=2)}"
             )
 
             self.send_response(200)
