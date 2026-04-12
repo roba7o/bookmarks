@@ -26,7 +26,12 @@ _SEQ = 4
 class MyHandler(BaseHTTPRequestHandler):
     def do_GET(self):
         if self.path == "/":
-            basic_200_body = "Welcome to the api! You are at the root page"
+            basic_200_body = (
+                "Welcome to the api! You are at the root page. "
+                "These are the following books stored on memory: "
+                f"{bookmark_dict}"
+            )
+
             self.send_response(200)
             self.send_header("Content-type", "application/json")
             self.send_header("Content-Length", int(len(basic_200_body)))
