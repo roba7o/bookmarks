@@ -74,9 +74,6 @@ class MyHandler(BaseHTTPRequestHandler):
                 dict_index = int(route_number_split[2])
                 if dict_index in bookmark_dict.keys():
                     try:
-                        # Need to error check the the post content
-                        # then insert it into the sequence
-                        # Will attempt it first with clean curl command
                         length = int(self.headers.get("Content-Length"))
                         raw = self.rfile.read(length)
                         try:
@@ -143,6 +140,42 @@ class MyHandler(BaseHTTPRequestHandler):
                     self.send_error(400, f"JSONDecodeError: {json_e}")
             except ValueError as val_e:
                 self.send_error(400, f"value error: {val_e}")
+
+    def do_DELETE(self):
+        """
+        DELETE will delete... an existing key!
+        """
+        if self.path == "/":
+            basic_200_body = """
+            Welcome to the api! You can't do anything here with your
+            request. You will need to add /bookmark/ to your endpoint.
+            """
+            self.send_response(200)
+            self.send_header("Content-type", "application/json")
+            self.send_header("Content-Length", int(len(basic_200_body)))
+            self.end_headers()
+            self.wfile.write(basic_200_body.encode("utf-8"))
+
+        elif self.path.startswith("/bookmark/"):
+            route_number_split = self.path.split("/")
+            try:
+                dict_index = int(route_number_split[2])
+                if dict_index in bookmark_dict.keys():
+                    try:
+                        bookmark_dict.pop(dict_index)
+                        self.send_response(200)
+                        self.send_header("Content-type", "application/txt")
+                        basic_delete_body = f"Completed DELETE! \
+                        The following was deleted at {dict_index}: "
+                        self.send_header("Content-Length", int(len(basic_delete_body)))
+                        self.end_headers()
+                        self.wfile.write(basic_delete_body.encode("utf-8"))
+                    except ValueError as val_e:
+                        self.send_error(400, f"value error: {val_e}")
+                else:
+                    self.send_error(404, "Resource not found in the endpoint")
+            except ValueError as E:
+                print(f"Value Error: {E}")
 
 
 with HTTPServer(addr, MyHandler) as serverr:
