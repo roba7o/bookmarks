@@ -1,4 +1,5 @@
 import json
+from json import JSONDecodeError
 
 from starlette.applications import Starlette
 from starlette.endpoints import HTTPEndpoint
@@ -28,7 +29,7 @@ async def homepage(request):
     return PlainTextResponse(basic_200_body)
 
 
-class BookMark(HTTPEndpoint):
+class BookMarkItem(HTTPEndpoint):
     async def get(self, request):
         try:
             book_index = request.path_params["book_index"]
@@ -36,11 +37,52 @@ class BookMark(HTTPEndpoint):
         except KeyError:
             raise HTTPException(404)
 
+    async def delete(self, request):
+        try:
+            book_index = request.path_params["book_index"]
+            deleted = str(bookmark_dict[book_index])
+            bookmark_dict.pop(book_index)
+            return PlainTextResponse(f"Removed: {deleted}")
+        except KeyError:
+            raise HTTPException(404)
+
+    async def patch(self, request):
+        try:
+            book_index = request.path_params["book_index"]
+            new_bookmark = await request.json()
+            bookmark_dict[book_index] = new_bookmark
+            return JSONResponse(bookmark_dict[book_index])
+        except ValueError:
+            raise HTTPException(404)
+        except JSONDecodeError:
+            raise HTTPException(404)
+
+
+class BookMarkCollection(HTTPEndpoint):
+    async def post(self, request):
+        """
+        New entries!!
+        """
+        try:
+            new_bookmark = await request.json()
+            global _SEQ
+            _SEQ += 1
+            bookmark_dict[_SEQ] = new_bookmark
+            return PlainTextResponse(
+                f"Created new bookmark at index: {_SEQ}, {bookmark_dict[_SEQ]}"
+            )
+        except ValueError:
+            raise HTTPException(400)
+
+    async def get(self, request):
+        return JSONResponse(bookmark_dict)
+
 
 app = Starlette(
     debug=True,
     routes=[
         Route("/", endpoint=homepage),
-        Route("/bookmark/{book_index:int}", endpoint=BookMark, methods=["GET", "POST"]),
+        Route("/bookmarks/", endpoint=BookMarkCollection),
+        Route("/bookmarks/{book_index:int}", endpoint=BookMarkItem),
     ],
 )
