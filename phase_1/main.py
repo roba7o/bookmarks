@@ -1,8 +1,9 @@
 import json
 
 from starlette.applications import Starlette
+from starlette.endpoints import HTTPEndpoint
 from starlette.exceptions import HTTPException
-from starlette.responses import PlainTextResponse
+from starlette.responses import JSONResponse, PlainTextResponse
 from starlette.routing import Route
 
 """
@@ -27,19 +28,19 @@ async def homepage(request):
     return PlainTextResponse(basic_200_body)
 
 
-async def bookmark(request):
-    try:
-        book_index = request.path_params["book_index"]
-        book, page = bookmark_dict[book_index].values()
-        return PlainTextResponse(f"Book: {book}, Page: {page}")
-    except KeyError:
-        raise HTTPException(404)
+class BookMark(HTTPEndpoint):
+    async def get(self, request):
+        try:
+            book_index = request.path_params["book_index"]
+            return JSONResponse(bookmark_dict[book_index])
+        except KeyError:
+            raise HTTPException(404)
 
 
 app = Starlette(
     debug=True,
     routes=[
         Route("/", endpoint=homepage),
-        Route("/bookmark/{book_index:int}", endpoint=bookmark, methods=["GET"]),
+        Route("/bookmark/{book_index:int}", endpoint=BookMark, methods=["GET", "POST"]),
     ],
 )
