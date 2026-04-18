@@ -52,9 +52,9 @@ class BookMarkItem(HTTPEndpoint):
             new_bookmark = await request.json()
             bookmark_dict[book_index] = new_bookmark
             return JSONResponse(bookmark_dict[book_index])
-        except ValueError:
-            raise HTTPException(404)
         except JSONDecodeError:
+            raise HTTPException(400)
+        except KeyError:
             raise HTTPException(404)
 
 
