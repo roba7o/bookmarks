@@ -50,7 +50,7 @@ class BookMarkItem(HTTPEndpoint):
         try:
             book_index = request.path_params["book_index"]
             new_bookmark = await request.json()
-            bookmark_dict[book_index] = new_bookmark
+            bookmark_dict[book_index].update(new_bookmark)
             return JSONResponse(bookmark_dict[book_index])
         except JSONDecodeError:
             raise HTTPException(400)
