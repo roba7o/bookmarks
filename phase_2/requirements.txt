@@ -1,0 +1,3 @@
+psycopg3
+asyncpg
+SQLAlchemy
