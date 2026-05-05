@@ -57,9 +57,34 @@ class BookMarkItem(HTTPEndpoint):
             await conn.close()
 
 
+class BookMarkList(HTTPEndpoint):
+    async def get(self, request):
+        conn = await asyncpg.connect(
+            user=os.getenv("DB_USER"),
+            password=os.getenv("DB_PASSWORD"),
+            database=os.getenv("DB_NAME"),
+            host="127.0.0.1",
+            port=5432,
+        )
+        try:
+            bookmark_items = await conn.fetch("SELECT * FROM public.bookmarks;")
+
+            if bookmark_items is None:
+                raise HTTPException(404)
+
+            contained_dict = "todo: make this return nicer?"
+            print(contained_dict)
+
+            return JSONResponse(str(bookmark_items))
+
+        finally:
+            await conn.close()
+
+
 app = Starlette(
     debug=True,
     routes=[
+        Route("/bookmarks/", endpoint=BookMarkList),
         Route("/bookmarks/{book_index:int}", endpoint=BookMarkItem),
     ],
 )
