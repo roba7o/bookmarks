@@ -1,0 +1,17 @@
+services:
+  db:
+    image: postgres:14
+    container_name: bookmarks-db
+    environment:
+      POSTGRES_USER: ${DB_USER}
+      POSTGRES_PASSWORD: ${DB_PASSWORD}
+      POSTGRES_DB: ${DB_NAME}
+    ports:
+      - "5432:5432"
+    volumes:
+      - db:/var/lib/postgresql/data
+      - ./phase_2/01-CREATE_TABLE.sql:/docker-entrypoint-initdb.d/01-create.sql
+      - ./phase_2/02-GEN_SAMPLE_DATA.sql:/docker-entrypoint-initdb.d/02-sample.sql
+
+volumes:
+  db:

@@ -34,7 +34,7 @@ class BookMarkItem(HTTPEndpoint):
             book_index = request.path_params["book_index"]
 
             bookmark_item = await conn.fetchrow(
-                "SELECT * FROM public.bookmarks WHERE id = $1", book_index
+                "SELECT * FROM public.bookmarks WHERE bm_seq = $1", book_index
             )
             print(
                 f"bookmark_item is type: {type(bookmark_item)} \
