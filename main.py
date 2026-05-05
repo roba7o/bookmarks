@@ -48,6 +48,7 @@ class BookMarkItem(HTTPEndpoint):
                 "title": bookmark_item["title"],
                 "author": bookmark_item["author"],
                 "page": bookmark_item["page"],
+                "date_cre": str(bookmark_item["created_at"]),
             }
 
             return JSONResponse(response_dict)
