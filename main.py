@@ -44,7 +44,7 @@ class BookMarkItem(HTTPEndpoint):
             if bookmark_item is None:
                 raise HTTPException(404)
 
-            return JSONResponse(dict(bookmark_item))
+            return JSONResponse(bookmark_item["title"])
 
         finally:
             await conn.close()
