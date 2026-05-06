@@ -105,8 +105,12 @@ class BookMarkList(HTTPEndpoint):
         # printing for now as i need to test the the suitability
         print(new_bookmark)
 
+        # attempting pydantic
         try:
-            return JSONResponse("Jsut a test")
+            new_bookmark_pyd = BookMarkCreate(**new_bookmark)
+            # print(new_bookmark_pyd)
+            return JSONResponse(f"'{str(new_bookmark_pyd)}' has been added!")
+
         finally:
             await conn.close()
 
