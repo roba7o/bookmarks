@@ -72,10 +72,17 @@ class BookMarkList(HTTPEndpoint):
             if bookmark_items is None:
                 raise HTTPException(404)
 
-            contained_dict = "todo: make this return nicer?"
-            print(contained_dict)
+            full_response = [
+                {
+                    "title": n["title"],
+                    "author": n["author"],
+                    "page": n["page"],
+                    "date_created_at": str(n["created_at"]),
+                }
+                for n in bookmark_items
+            ]
 
-            return JSONResponse(str(bookmark_items))
+            return JSONResponse(full_response)
 
         finally:
             await conn.close()
