@@ -48,7 +48,7 @@ class BookMarkItem(HTTPEndpoint):
                 "title": bookmark_item["title"],
                 "author": bookmark_item["author"],
                 "page": bookmark_item["page"],
-                "date_cre": str(bookmark_item["created_at"]),
+                "created_at": str(bookmark_item["created_at"]),
             }
 
             return JSONResponse(response_dict)
@@ -69,15 +69,12 @@ class BookMarkList(HTTPEndpoint):
         try:
             bookmark_items = await conn.fetch("SELECT * FROM public.bookmarks;")
 
-            if bookmark_items is None:
-                raise HTTPException(404)
-
             full_response = [
                 {
                     "title": n["title"],
                     "author": n["author"],
                     "page": n["page"],
-                    "date_created_at": str(n["created_at"]),
+                    "created_at": str(n["created_at"]),
                 }
                 for n in bookmark_items
             ]
