@@ -2,6 +2,7 @@ import os
 
 import asyncpg
 from dotenv import load_dotenv
+from pydantic import BaseModel
 from starlette.applications import Starlette
 from starlette.endpoints import HTTPEndpoint
 from starlette.exceptions import HTTPException
@@ -19,6 +20,12 @@ TODO: but the standard pattern is a connection pool (asyncpg.create_pool())
 created once at app startup and shared across requests.
 Starlette has lifespan hooks for this
 """
+
+
+class BookMarkCreate(BaseModel):
+    title: str
+    author: str
+    page: int
 
 
 class BookMarkItem(HTTPEndpoint):
@@ -97,6 +104,7 @@ class BookMarkList(HTTPEndpoint):
 
         # printing for now as i need to test the the suitability
         print(new_bookmark)
+
         try:
             return JSONResponse("Jsut a test")
         finally:
