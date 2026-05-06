@@ -59,6 +59,7 @@ class BookMarkItem(HTTPEndpoint):
 
 class BookMarkList(HTTPEndpoint):
     async def get(self, request):
+        # todo: anyway to create a fucntion that handles the connection and it closing
         conn = await asyncpg.connect(
             user=os.getenv("DB_USER"),
             password=os.getenv("DB_PASSWORD"),
@@ -81,6 +82,23 @@ class BookMarkList(HTTPEndpoint):
 
             return JSONResponse(full_response)
 
+        finally:
+            await conn.close()
+
+    async def post(self, request):
+        conn = await asyncpg.connect(
+            user=os.getenv("DB_USER"),
+            password=os.getenv("DB_PASSWORD"),
+            database=os.getenv("DB_NAME"),
+            host="127.0.0.1",
+            port=5432,
+        )
+        new_bookmark = await request.json()
+
+        # printing for now as i need to test the the suitability
+        print(new_bookmark)
+        try:
+            return JSONResponse("Jsut a test")
         finally:
             await conn.close()
 
