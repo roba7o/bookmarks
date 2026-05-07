@@ -28,10 +28,6 @@ class BookMarkCreate(BaseModel):
     page: int
 
 
-class BookMarkPost(BookMarkCreate):
-    bm_seq: int
-
-
 class BookMarkItem(HTTPEndpoint):
     async def get(self, request):
         conn = await asyncpg.connect(
@@ -82,17 +78,22 @@ class BookMarkItem(HTTPEndpoint):
             # print for debugging
             new_bookmark_pyd = BookMarkCreate(**post_bookmark)
 
-            update_string = f"""
-                UPDATE BOOKMARKS SET
-                    title = '{new_bookmark_pyd.title}',
-                    author = '{new_bookmark_pyd.author}',
-                    page = '{new_bookmark_pyd.page}'
-                WHERE
-                    (bm_seq = {book_index})
-                RETURNING *;
+            row = await conn.fetchrow(
                 """
-
-            row = await conn.fetchrow(update_string)
+                    UPDATE BOOKMARKS SET
+                    title = $1,
+                    author = $2,
+                    page = $3
+                WHERE
+                    bm_seq = $4
+                RETURNING
+                    *;
+                """,
+                new_bookmark_pyd.title,
+                new_bookmark_pyd.author,
+                new_bookmark_pyd.page,
+                book_index,
+            )
 
             print(f"index {book_index} returned row: {row}")
 
@@ -151,18 +152,20 @@ class BookMarkList(HTTPEndpoint):
         try:
             new_bookmark_pyd = BookMarkCreate(**new_bookmark)
 
-            insert_string = f"""
-                INSERT INTO BOOKMARKS (TITLE, AUTHOR, PAGE) VALUES
-                ('{new_bookmark_pyd.title}',
-                '{new_bookmark_pyd.author}',
-                '{new_bookmark_pyd.page}')
-            """
+            row = await conn.fetchrow(
+                """
+                INSERT INTO BOOKMARKS (TITLE, AUTHOR, PAGE)
+                VALUES($1, $2, $3)
+                RETURNING *;
+                """,
+                new_bookmark_pyd.title,
+                new_bookmark_pyd.author,
+                new_bookmark_pyd.page,
+            )
 
-            print(f"insert string is {insert_string}")
+            if row is None:
+                raise HTTPException(404)
 
-            await conn.execute(insert_string)
-
-            # print(new_bookmark_pyd)
             return JSONResponse(f"'{str(new_bookmark_pyd)}' has been added!")
 
         finally:
