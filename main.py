@@ -28,6 +28,10 @@ class BookMarkCreate(BaseModel):
     page: int
 
 
+class BookMarkPost(BookMarkCreate):
+    bm_seq: int
+
+
 class BookMarkItem(HTTPEndpoint):
     async def get(self, request):
         conn = await asyncpg.connect(
@@ -63,6 +67,43 @@ class BookMarkItem(HTTPEndpoint):
         finally:
             await conn.close()
 
+    async def put(self, request):
+        conn = await asyncpg.connect(
+            user=os.getenv("DB_USER"),
+            password=os.getenv("DB_PASSWORD"),
+            database=os.getenv("DB_NAME"),
+            host="127.0.0.1",
+            port=5432,
+        )
+        try:
+            post_bookmark = await request.json()
+            book_index = request.path_params["book_index"]
+
+            # print for debugging
+            new_bookmark_pyd = BookMarkCreate(**post_bookmark)
+
+            update_string = f"""
+                UPDATE BOOKMARKS SET
+                    title = '{new_bookmark_pyd.title}',
+                    author = '{new_bookmark_pyd.author}',
+                    page = '{new_bookmark_pyd.page}'
+                WHERE
+                    (bm_seq = {book_index})
+                RETURNING *;
+                """
+
+            row = await conn.fetchrow(update_string)
+
+            print(f"index {book_index} returned row: {row}")
+
+            if row is None:
+                raise HTTPException(404)
+
+            return JSONResponse(f"Index:{book_index}' has been updated!")
+
+        finally:
+            await conn.close()
+
 
 class BookMarkList(HTTPEndpoint):
     async def get(self, request):
@@ -79,6 +120,7 @@ class BookMarkList(HTTPEndpoint):
 
             full_response = [
                 {
+                    "bm_seq": n["bm_seq"],
                     "title": n["title"],
                     "author": n["author"],
                     "page": n["page"],
@@ -108,6 +150,18 @@ class BookMarkList(HTTPEndpoint):
         # attempting pydantic
         try:
             new_bookmark_pyd = BookMarkCreate(**new_bookmark)
+
+            insert_string = f"""
+                INSERT INTO BOOKMARKS (TITLE, AUTHOR, PAGE) VALUES
+                ('{new_bookmark_pyd.title}',
+                '{new_bookmark_pyd.author}',
+                '{new_bookmark_pyd.page}')
+            """
+
+            print(f"insert string is {insert_string}")
+
+            await conn.execute(insert_string)
+
             # print(new_bookmark_pyd)
             return JSONResponse(f"'{str(new_bookmark_pyd)}' has been added!")
 
