@@ -1,4 +1,5 @@
 import os
+from contextlib import asynccontextmanager
 
 import asyncpg
 from dotenv import load_dotenv
@@ -11,16 +12,6 @@ from starlette.routing import Route
 
 load_dotenv()
 
-"""
-From the docs but not a decorator approach
-
-jsut run main -> its not working
-
-TODO: but the standard pattern is a connection pool (asyncpg.create_pool())
-created once at app startup and shared across requests.
-Starlette has lifespan hooks for this
-"""
-
 
 class BookMarkCreate(BaseModel):
     title: str
@@ -28,16 +19,24 @@ class BookMarkCreate(BaseModel):
     page: int
 
 
+@asynccontextmanager
+async def lifespan(app):
+    app.state.pool = await asyncpg.create_pool(
+        min_size=5,
+        max_size=15,
+        user=os.getenv("DB_USER"),
+        password=os.getenv("DB_PASSWORD"),
+        database=os.getenv("DB_NAME"),
+        host="127.0.0.1",
+        port=5432,
+    )
+    yield
+    await app.state.pool.close()
+
+
 class BookMarkItem(HTTPEndpoint):
     async def get(self, request):
-        conn = await asyncpg.connect(
-            user=os.getenv("DB_USER"),
-            password=os.getenv("DB_PASSWORD"),
-            database=os.getenv("DB_NAME"),
-            host="127.0.0.1",
-            port=5432,
-        )
-        try:
+        async with request.app.state.pool.acquire() as conn:
             book_index = request.path_params["book_index"]
 
             bookmark_item = await conn.fetchrow(
@@ -45,7 +44,7 @@ class BookMarkItem(HTTPEndpoint):
             )
             print(
                 f"bookmark_item is type: {type(bookmark_item)} \
-                  and is value: {bookmark_item}"
+                and is value: {bookmark_item}"
             )
 
             if bookmark_item is None:
@@ -60,18 +59,8 @@ class BookMarkItem(HTTPEndpoint):
 
             return JSONResponse(response_dict)
 
-        finally:
-            await conn.close()
-
     async def put(self, request):
-        conn = await asyncpg.connect(
-            user=os.getenv("DB_USER"),
-            password=os.getenv("DB_PASSWORD"),
-            database=os.getenv("DB_NAME"),
-            host="127.0.0.1",
-            port=5432,
-        )
-        try:
+        async with request.app.state.pool.acquire() as conn:
             post_bookmark = await request.json()
             book_index = request.path_params["book_index"]
 
@@ -102,19 +91,8 @@ class BookMarkItem(HTTPEndpoint):
 
             return JSONResponse(f"Index:{book_index}' has been updated!")
 
-        finally:
-            await conn.close()
-
     async def delete(self, request):
-        print("im here")
-        conn = await asyncpg.connect(
-            user=os.getenv("DB_USER"),
-            password=os.getenv("DB_PASSWORD"),
-            database=os.getenv("DB_NAME"),
-            host="127.0.0.1",
-            port=5432,
-        )
-        try:
+        async with request.app.state.pool.acquire() as conn:
             book_index = request.path_params["book_index"]
 
             deleted_row = await conn.fetchrow(
@@ -132,21 +110,10 @@ class BookMarkItem(HTTPEndpoint):
 
             return JSONResponse(f"Index:{book_index}' has been deleted!")
 
-        finally:
-            await conn.close()
-
 
 class BookMarkList(HTTPEndpoint):
     async def get(self, request):
-        # todo: anyway to create a fucntion that handles the connection and it closing
-        conn = await asyncpg.connect(
-            user=os.getenv("DB_USER"),
-            password=os.getenv("DB_PASSWORD"),
-            database=os.getenv("DB_NAME"),
-            host="127.0.0.1",
-            port=5432,
-        )
-        try:
+        async with request.app.state.pool.acquire() as conn:
             bookmark_items = await conn.fetch("SELECT * FROM public.bookmarks;")
 
             full_response = [
@@ -162,26 +129,11 @@ class BookMarkList(HTTPEndpoint):
 
             return JSONResponse(full_response)
 
-        finally:
-            await conn.close()
-
     async def post(self, request):
-        conn = await asyncpg.connect(
-            user=os.getenv("DB_USER"),
-            password=os.getenv("DB_PASSWORD"),
-            database=os.getenv("DB_NAME"),
-            host="127.0.0.1",
-            port=5432,
-        )
         new_bookmark = await request.json()
 
-        # printing for now as i need to test the the suitability
-        print(new_bookmark)
-
-        # attempting pydantic
-        try:
+        async with request.app.state.pool.acquire() as conn:
             new_bookmark_pyd = BookMarkCreate(**new_bookmark)
-
             row = await conn.fetchrow(
                 """
                 INSERT INTO BOOKMARKS (TITLE, AUTHOR, PAGE)
@@ -198,12 +150,10 @@ class BookMarkList(HTTPEndpoint):
 
             return JSONResponse(f"'{str(new_bookmark_pyd)}' has been added!")
 
-        finally:
-            await conn.close()
-
 
 app = Starlette(
     debug=True,
+    lifespan=lifespan,
     routes=[
         Route("/bookmarks/", endpoint=BookMarkList),
         Route("/bookmarks/{book_index:int}", endpoint=BookMarkItem),
