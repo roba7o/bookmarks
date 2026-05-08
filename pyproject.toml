@@ -1,6 +1,14 @@
 [project]
 name = "bookmarks"
 version = "1.0.0"
+dependencies = [
+    "starlette",
+    "uvicorn",
+    "asyncpg",
+    "pydantic",
+    "python-dotenv",
+]
+
 
 [tool.ruff]
 line-length = 88
