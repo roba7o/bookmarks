@@ -105,6 +105,36 @@ class BookMarkItem(HTTPEndpoint):
         finally:
             await conn.close()
 
+    async def delete(self, request):
+        print("im here")
+        conn = await asyncpg.connect(
+            user=os.getenv("DB_USER"),
+            password=os.getenv("DB_PASSWORD"),
+            database=os.getenv("DB_NAME"),
+            host="127.0.0.1",
+            port=5432,
+        )
+        try:
+            book_index = request.path_params["book_index"]
+
+            deleted_row = await conn.fetchrow(
+                """
+                DELETE FROM public.bookmarks
+                WHERE bm_seq = $1
+                RETURNING *;
+                """,
+                book_index,
+            )
+            print(f"index {book_index} deleted row: {deleted_row}")
+
+            if deleted_row is None:
+                raise HTTPException(404)
+
+            return JSONResponse(f"Index:{book_index}' has been deleted!")
+
+        finally:
+            await conn.close()
+
 
 class BookMarkList(HTTPEndpoint):
     async def get(self, request):
