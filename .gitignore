@@ -5,3 +5,4 @@ __pycache__/
 .env
 #claude skill to stop it writing code
 CLAUDE.md
+*.egg-info
