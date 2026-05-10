@@ -12,6 +12,7 @@ dependencies = [
     "pydantic",
     "python-dotenv",
     "SQLAlchemy",
+    "sqlalchemy[asyncio]"
 ]
 
 [tool.setuptools.packages.find]
