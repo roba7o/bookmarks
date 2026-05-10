@@ -95,7 +95,7 @@ class BookMarkItem(HTTPEndpoint):
             book_index = request.path_params["book_index"]
             new_bookmark_pyd = BookMarkCreate(**post_bookmark)
 
-            await conn.execute(
+            put_result = await conn.execute(
                 update(bookmarks)
                 .where(bookmarks.c.bm_seq == book_index)
                 .values(
@@ -103,7 +103,12 @@ class BookMarkItem(HTTPEndpoint):
                     author=new_bookmark_pyd.author,
                     page=new_bookmark_pyd.page,
                 )
+                .returning(bookmarks)
             )
+
+            putted = put_result.mappings().fetchone()
+            if putted is None:
+                raise HTTPException(404)
 
             await conn.commit()
 
@@ -156,17 +161,20 @@ class BookMarkList(HTTPEndpoint):
             new_bookmark_pyd = BookMarkCreate(**new_bookmark)
 
             post_result = await conn.execute(
-                insert(bookmarks).values(
+                insert(bookmarks)
+                .values(
                     title=new_bookmark_pyd.title,
                     author=new_bookmark_pyd.author,
                     page=new_bookmark_pyd.page,
                 )
+                .returning(bookmarks)
             )
-            await conn.commit()
 
-            if post_result is None:
+            posted = post_result.mappings().fetchone()
+            if posted is None:
                 raise HTTPException(404)
 
+            await conn.commit()
             return JSONResponse(f"'{str(new_bookmark_pyd)}' has been added!")
 
 
