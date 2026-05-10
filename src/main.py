@@ -13,6 +13,7 @@ from sqlalchemy import (
     Table,
     Text,
     delete,
+    insert,
     select,
     text,
     update,
@@ -169,18 +170,17 @@ class BookMarkList(HTTPEndpoint):
 
         async with request.app.state.engine.connect() as conn:
             new_bookmark_pyd = BookMarkCreate(**new_bookmark)
-            row = await conn.fetchrow(
-                """
-                INSERT INTO BOOKMARKS (TITLE, AUTHOR, PAGE)
-                VALUES($1, $2, $3)
-                RETURNING *;
-                """,
-                new_bookmark_pyd.title,
-                new_bookmark_pyd.author,
-                new_bookmark_pyd.page,
-            )
 
-            if row is None:
+            post_result = await conn.execute(
+                insert(bookmarks).values(
+                    title=new_bookmark_pyd.title,
+                    author=new_bookmark_pyd.author,
+                    page=new_bookmark_pyd.page,
+                )
+            )
+            await conn.commit()
+
+            if post_result is None:
                 raise HTTPException(404)
 
             return JSONResponse(f"'{str(new_bookmark_pyd)}' has been added!")
