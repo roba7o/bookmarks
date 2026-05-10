@@ -89,13 +89,11 @@ class BookMarkItem(HTTPEndpoint):
         async with request.app.state.engine.connect() as conn:
             book_index = request.path_params["book_index"]
 
-            # bookmark_item = await conn.fetchrow(
-            #     "SELECT * FROM public.bookmarks WHERE bm_seq = $1", book_index
-            # )
-
-            bookmark_item = await conn.execute(
+            bookmark_result = await conn.execute(
                 select(bookmarks).where(bookmarks.c.bm_seq == book_index)
-            ).fetch()
+            )
+
+            bookmark_item = bookmark_result.mappings().fetchone()
 
             print(
                 f"bookmark_item is type: {type(bookmark_item)} \
@@ -169,7 +167,7 @@ class BookMarkItem(HTTPEndpoint):
 class BookMarkList(HTTPEndpoint):
     async def get(self, request):
         async with request.app.state.engine.connect() as conn:
-            bookmark_items = await conn.fetch("SELECT * FROM public.bookmarks;")
+            bookmark_items = await conn.execute(select(bookmarks)).fetchall()
 
             full_response = [
                 {
