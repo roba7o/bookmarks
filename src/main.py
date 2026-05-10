@@ -27,25 +27,6 @@ from starlette.routing import Route
 
 load_dotenv()
 
-"""
-Declaring models for SQLAlchemy
-
-"""
-
-DATABASE_URL = "sqlite:///database.db"
-
-
-# class BookMarkORM(DeclarativeBase):
-#     __tablename__ = "bookmark"
-#     bm_seq = Column(Integer, Identity(always=True, primary_key=True))
-#     title = Column(Text, unique=True)
-#     author = Column(Text)
-#     page = Column(Integer)
-#     created_at = Column(DateTime)
-
-#     def __repr__(self) -> str:
-#         return f"Book(id={self.bm_seq}, author={self.author}, title={self.title})"
-
 
 class BookMarkCreate(BaseModel):
     title: str
@@ -58,7 +39,7 @@ metadata = MetaData()
 bookmarks = Table(
     "bookmarks",
     metadata,
-    Column("bm_seq", Integer, Identity(always=True)),
+    Column("bm_seq", Integer, Identity(always=True), primary_key=True),
     Column("title", Text, unique=True),
     Column("author", Text),
     Column("page", Integer),
@@ -114,7 +95,7 @@ class BookMarkItem(HTTPEndpoint):
             book_index = request.path_params["book_index"]
             new_bookmark_pyd = BookMarkCreate(**post_bookmark)
 
-            put_result = await conn.execute(
+            await conn.execute(
                 update(bookmarks)
                 .where(bookmarks.c.bm_seq == book_index)
                 .values(
@@ -126,25 +107,28 @@ class BookMarkItem(HTTPEndpoint):
 
             await conn.commit()
 
-            print(f"put result is {put_result}")
-
-            return JSONResponse(f"Index:{book_index}' has been updated!")
+            return JSONResponse(f"Index:{book_index}' has been updated!!")
 
     async def delete(self, request):
         async with request.app.state.engine.connect() as conn:
             book_index = request.path_params["book_index"]
 
             deleted_result = await conn.execute(
-                delete(bookmarks).where(bookmarks.c.bm_seq == book_index)
+                delete(bookmarks)
+                .where(bookmarks.c.bm_seq == book_index)
+                .returning(bookmarks)
             )
 
-            await conn.commit()
-            print(f"index {book_index} deleted row: {deleted_result}")
+            deleted = deleted_result.mappings().fetchone()
 
-            if deleted_result is None:
+            if deleted is None:
                 raise HTTPException(404)
 
-            return JSONResponse(f"Index:{book_index}' has been deleted!")
+            await conn.commit()
+
+            return JSONResponse(
+                f"Index:{book_index}' has been deleted! {deleted} no longer exists."
+            )
 
 
 class BookMarkList(HTTPEndpoint):
