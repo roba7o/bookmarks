@@ -1,4 +1,5 @@
 import os
+from contextlib import asynccontextmanager
 
 # from typing import DateTime, Integer, Text
 from dotenv import load_dotenv
@@ -12,6 +13,7 @@ from sqlalchemy import (
     Table,
     Text,
     select,
+    text,
 )
 from sqlalchemy.ext.asyncio import create_async_engine
 from starlette.applications import Starlette
@@ -53,14 +55,20 @@ metadata = MetaData()
 bookmarks = Table(
     "bookmarks",
     metadata,
-    Column("bm_seq", Integer, Identity(always=True, primary_key=True)),
-    Column("name", Text, unique=True),
-    Column("age", Text),
+    Column("bm_seq", Integer, Identity(always=True)),
+    Column("title", Text, unique=True),
+    Column("author", Text),
     Column("page", Integer),
-    Column("created_at", DateTime),
+    Column(
+        "created_at",
+        DateTime(timezone=True),
+        server_default=text("NOW()"),
+        nullable=False,
+    ),
 )
 
 
+@asynccontextmanager
 async def lifespan(app) -> None:
     password = os.getenv("DB_PASSWORD")
     user = os.getenv("DB_USER")
@@ -70,8 +78,10 @@ async def lifespan(app) -> None:
         f"postgresql+asyncpg://{user}:{password}@localhost:5432/{db_name}", echo=True
     )
     async with app.state.engine.begin() as conn:
-        await conn.run_sync(metadata.drop_all)
+        await conn.run_sync(metadata.drop_all)  # delete once stable
         await conn.run_sync(metadata.create_all)
+    yield
+    await app.state.engine.dispose()
 
 
 class BookMarkItem(HTTPEndpoint):
@@ -85,7 +95,7 @@ class BookMarkItem(HTTPEndpoint):
 
             bookmark_item = await conn.execute(
                 select(bookmarks).where(bookmarks.c.bm_seq == book_index)
-            )
+            ).fetch()
 
             print(
                 f"bookmark_item is type: {type(bookmark_item)} \
