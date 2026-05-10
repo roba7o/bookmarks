@@ -12,6 +12,7 @@ from sqlalchemy import (
     MetaData,
     Table,
     Text,
+    delete,
     select,
     text,
     update,
@@ -93,7 +94,6 @@ class BookMarkItem(HTTPEndpoint):
             bookmark_result = await conn.execute(
                 select(bookmarks).where(bookmarks.c.bm_seq == book_index)
             )
-
             bookmark_item = bookmark_result.mappings().fetchone()
             if bookmark_item is None:
                 raise HTTPException(404)
@@ -111,8 +111,6 @@ class BookMarkItem(HTTPEndpoint):
         async with request.app.state.engine.connect() as conn:
             post_bookmark = await request.json()
             book_index = request.path_params["book_index"]
-
-            # print for debugging
             new_bookmark_pyd = BookMarkCreate(**post_bookmark)
 
             put_result = await conn.execute(
@@ -129,30 +127,20 @@ class BookMarkItem(HTTPEndpoint):
 
             print(f"put result is {put_result}")
 
-            # row = put_result.fetchone()
-
-            # print(f"index {book_index} returned row: {row}")
-
-            # if row is None:
-            #     raise HTTPException(404)
-
             return JSONResponse(f"Index:{book_index}' has been updated!")
 
     async def delete(self, request):
         async with request.app.state.engine.connect() as conn:
             book_index = request.path_params["book_index"]
 
-            deleted_row = await conn.fetchrow(
-                """
-                DELETE FROM public.bookmarks
-                WHERE bm_seq = $1
-                RETURNING *;
-                """,
-                book_index,
+            deleted_result = await conn.execute(
+                delete(bookmarks).where(bookmarks.c.bm_seq == book_index)
             )
-            print(f"index {book_index} deleted row: {deleted_row}")
 
-            if deleted_row is None:
+            await conn.commit()
+            print(f"index {book_index} deleted row: {deleted_result}")
+
+            if deleted_result is None:
                 raise HTTPException(404)
 
             return JSONResponse(f"Index:{book_index}' has been deleted!")
