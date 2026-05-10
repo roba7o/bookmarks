@@ -14,6 +14,7 @@ from sqlalchemy import (
     Text,
     select,
     text,
+    update,
 )
 from sqlalchemy.ext.asyncio import create_async_engine
 from starlette.applications import Starlette
@@ -94,12 +95,6 @@ class BookMarkItem(HTTPEndpoint):
             )
 
             bookmark_item = bookmark_result.mappings().fetchone()
-
-            print(
-                f"bookmark_item is type: {type(bookmark_item)} \
-                and is value: {bookmark_item}"
-            )
-
             if bookmark_item is None:
                 raise HTTPException(404)
 
@@ -120,27 +115,26 @@ class BookMarkItem(HTTPEndpoint):
             # print for debugging
             new_bookmark_pyd = BookMarkCreate(**post_bookmark)
 
-            row = await conn.fetchrow(
-                """
-                    UPDATE BOOKMARKS SET
-                    title = $1,
-                    author = $2,
-                    page = $3
-                WHERE
-                    bm_seq = $4
-                RETURNING
-                    *;
-                """,
-                new_bookmark_pyd.title,
-                new_bookmark_pyd.author,
-                new_bookmark_pyd.page,
-                book_index,
+            put_result = await conn.execute(
+                update(bookmarks)
+                .where(bookmarks.c.bm_seq == book_index)
+                .values(
+                    title=new_bookmark_pyd.title,
+                    author=new_bookmark_pyd.author,
+                    page=new_bookmark_pyd.page,
+                )
             )
 
-            print(f"index {book_index} returned row: {row}")
+            await conn.commit()
 
-            if row is None:
-                raise HTTPException(404)
+            print(f"put result is {put_result}")
+
+            # row = put_result.fetchone()
+
+            # print(f"index {book_index} returned row: {row}")
+
+            # if row is None:
+            #     raise HTTPException(404)
 
             return JSONResponse(f"Index:{book_index}' has been updated!")
 
