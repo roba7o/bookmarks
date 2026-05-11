@@ -1,9 +1,9 @@
 import os
+from collections.abc import AsyncGenerator
 from contextlib import asynccontextmanager
 
-# from typing import DateTime, Integer, Text
 from dotenv import load_dotenv
-from pydantic import BaseModel
+from pydantic import BaseModel, ValidationError
 from sqlalchemy import (
     Column,
     DateTime,
@@ -27,13 +27,27 @@ from starlette.routing import Route
 
 load_dotenv()
 
+"""
+TODO LIST
 
+1) Alter these to alembic migrations once app is stable with necessary tables.
+   Minimum tables being: bookmarks & users
+
+2) Change the parameter names and modularise each REST function. Namings of anything
+    related to bookmarks is terrible atm
+
+3)
+"""
+
+
+# pydantic type strictening
 class BookMarkCreate(BaseModel):
     title: str
     author: str
     page: int
 
 
+# Table instantiation - postgressqlalchemy
 metadata = MetaData()
 
 bookmarks = Table(
@@ -53,7 +67,7 @@ bookmarks = Table(
 
 
 @asynccontextmanager
-async def lifespan(app) -> None:
+async def lifespan(app) -> AsyncGenerator:
     password = os.getenv("DB_PASSWORD")
     user = os.getenv("DB_USER")
     db_name = os.getenv("DB_NAME")
@@ -62,7 +76,7 @@ async def lifespan(app) -> None:
         f"postgresql+asyncpg://{user}:{password}@localhost:5432/{db_name}", echo=True
     )
     async with app.state.engine.begin() as conn:
-        await conn.run_sync(metadata.drop_all)  # delete once stable
+        await conn.run_sync(metadata.drop_all)
         await conn.run_sync(metadata.create_all)
     yield
     await app.state.engine.dispose()
@@ -93,7 +107,10 @@ class BookMarkItem(HTTPEndpoint):
         async with request.app.state.engine.connect() as conn:
             post_bookmark = await request.json()
             book_index = request.path_params["book_index"]
-            new_bookmark_pyd = BookMarkCreate(**post_bookmark)
+            try:
+                new_bookmark_pyd = BookMarkCreate(**post_bookmark)
+            except ValidationError:
+                raise HTTPException(422)
 
             put_result = await conn.execute(
                 update(bookmarks)
@@ -106,13 +123,21 @@ class BookMarkItem(HTTPEndpoint):
                 .returning(bookmarks)
             )
 
-            putted = put_result.mappings().fetchone()
-            if putted is None:
+            putted_item = put_result.mappings().fetchone()
+            if putted_item is None:
                 raise HTTPException(404)
 
             await conn.commit()
 
-            return JSONResponse(f"Index:{book_index}' has been updated!!")
+            response_dict = {
+                "bm_seq": book_index,
+                "title": putted_item["title"],
+                "author": putted_item["author"],
+                "page": putted_item["page"],
+                "created_at": str(putted_item["created_at"]),
+            }
+
+            return JSONResponse(response_dict)
 
     async def delete(self, request):
         async with request.app.state.engine.connect() as conn:
@@ -124,16 +149,23 @@ class BookMarkItem(HTTPEndpoint):
                 .returning(bookmarks)
             )
 
-            deleted = deleted_result.mappings().fetchone()
+            deleted_item = deleted_result.mappings().fetchone()
 
-            if deleted is None:
+            if deleted_item is None:
                 raise HTTPException(404)
 
             await conn.commit()
 
-            return JSONResponse(
-                f"Index:{book_index}' has been deleted! {deleted} no longer exists."
-            )
+            response_dict = {
+                "bm_seq": book_index,
+                "title": deleted_item["title"],
+                "author": deleted_item["author"],
+                "page": deleted_item["page"],
+                "created_at": str(deleted_item["created_at"]),
+            }
+
+            # can also return empty 204 of we dont want to return the body
+            return JSONResponse(response_dict)
 
 
 class BookMarkList(HTTPEndpoint):
@@ -158,7 +190,10 @@ class BookMarkList(HTTPEndpoint):
         new_bookmark = await request.json()
 
         async with request.app.state.engine.connect() as conn:
-            new_bookmark_pyd = BookMarkCreate(**new_bookmark)
+            try:
+                new_bookmark_pyd = BookMarkCreate(**new_bookmark)
+            except ValidationError:
+                raise HTTPException(422)
 
             post_result = await conn.execute(
                 insert(bookmarks)
@@ -170,12 +205,18 @@ class BookMarkList(HTTPEndpoint):
                 .returning(bookmarks)
             )
 
-            posted = post_result.mappings().fetchone()
-            if posted is None:
-                raise HTTPException(404)
+            posted_item = post_result.mappings().fetchone()
 
             await conn.commit()
-            return JSONResponse(f"'{str(new_bookmark_pyd)}' has been added!")
+            response_dict = {
+                "bm_seq": posted_item["bm_seq"],
+                "title": posted_item["title"],
+                "author": posted_item["author"],
+                "page": posted_item["page"],
+                "created_at": str(posted_item["created_at"]),
+            }
+
+            return JSONResponse(response_dict)
 
 
 app = Starlette(
