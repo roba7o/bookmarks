@@ -169,7 +169,6 @@ class BookMarkItem(HTTPEndpoint):
 class BookMarkList(HTTPEndpoint):
     async def get(self, request):
         async with request.app.state.engine.connect() as conn:
-            # 404 if there is none?
             bookmark_items = await conn.execute(select(bookmarks)).fetchall()
 
             full_response = [

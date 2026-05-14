@@ -11,10 +11,6 @@ logging.basicConfig(
 )
 logger = logging.getLogger(__name__)
 
-"""
-REGISTER THE SPECIFIC ERROR FIRST!! -> cant do by route call
-"""
-
 
 async def invalid_payload_handler(request: Request, exc: ValidationError):
     return JSONResponse(
@@ -32,7 +28,6 @@ async def db_integrity_handler(request: Request, exc: IntegrityError):
         {
             "detail": "Conflict existing data",
             "code": "conflict",
-            "errors": exc.orig,
         },
         status_code=409,
     )
@@ -41,11 +36,10 @@ async def db_integrity_handler(request: Request, exc: IntegrityError):
 async def db_database_gen_handler(request: Request, exc: DatabaseError):
     return JSONResponse(
         {
-            "detail": "Conflict existing data",
-            "code": "conflict",
-            "errors": exc.orig,
+            "detail": "Database error",
+            "code": "db_error",
         },
-        status_code=409,
+        status_code=500,
     )
 
 
@@ -56,7 +50,7 @@ async def http_exception(request: Request, exc: HTTPException):
     )
 
 
-async def unhandled(request: Request, exc: HTTPException):
+async def unhandled(request: Request, exc: Exception):
     logger.exception("unhandled error")
     return JSONResponse(
         {"detail": "Internal server error"},
