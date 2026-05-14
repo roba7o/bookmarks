@@ -18,12 +18,15 @@ from sqlalchemy import (
     text,
     update,
 )
+from sqlalchemy.exc import DatabaseError, IntegrityError
 from sqlalchemy.ext.asyncio import create_async_engine
 from starlette.applications import Starlette
 from starlette.endpoints import HTTPEndpoint
 from starlette.exceptions import HTTPException
 from starlette.responses import JSONResponse
 from starlette.routing import Route
+
+import handlers
 
 load_dotenv()
 
@@ -87,6 +90,7 @@ class BookMarkItem(HTTPEndpoint):
         async with request.app.state.engine.connect() as conn:
             book_index = request.path_params["book_index"]
 
+            # need 404 here
             bookmark_result = await conn.execute(
                 select(bookmarks).where(bookmarks.c.bm_seq == book_index)
             )
@@ -106,12 +110,15 @@ class BookMarkItem(HTTPEndpoint):
     async def put(self, request):
         async with request.app.state.engine.connect() as conn:
             post_bookmark = await request.json()
+            # need 400 here for bad bookindex
             book_index = request.path_params["book_index"]
             try:
+                # same need 400/422? here if the payload is wrong
                 new_bookmark_pyd = BookMarkCreate(**post_bookmark)
             except ValidationError:
                 raise HTTPException(422)
 
+            # 422 here if the payload got past pydantic but couldnt be solved
             put_result = await conn.execute(
                 update(bookmarks)
                 .where(bookmarks.c.bm_seq == book_index)
@@ -141,6 +148,7 @@ class BookMarkItem(HTTPEndpoint):
 
     async def delete(self, request):
         async with request.app.state.engine.connect() as conn:
+            # need 400 here for bad bookindex
             book_index = request.path_params["book_index"]
 
             deleted_result = await conn.execute(
@@ -171,6 +179,7 @@ class BookMarkItem(HTTPEndpoint):
 class BookMarkList(HTTPEndpoint):
     async def get(self, request):
         async with request.app.state.engine.connect() as conn:
+            # 404 if there is none?
             bookmark_items = await conn.execute(select(bookmarks)).fetchall()
 
             full_response = [
@@ -192,6 +201,7 @@ class BookMarkList(HTTPEndpoint):
         async with request.app.state.engine.connect() as conn:
             try:
                 new_bookmark_pyd = BookMarkCreate(**new_bookmark)
+                # my new validation handler!
             except ValidationError:
                 raise HTTPException(422)
 
@@ -226,4 +236,11 @@ app = Starlette(
         Route("/bookmarks/", endpoint=BookMarkList),
         Route("/bookmarks/{book_index:int}", endpoint=BookMarkItem),
     ],
+    exception_handlers={
+        ValidationError: handlers.invalid_payload_handler,
+        HTTPException: handlers.http_exception,
+        IntegrityError: handlers.db_integrity_handler,
+        DatabaseError: handlers.db_database_gen_handler,
+        Exception: handlers.unhandled,
+    },
 )
