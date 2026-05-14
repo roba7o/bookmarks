@@ -90,7 +90,6 @@ class BookMarkItem(HTTPEndpoint):
         async with request.app.state.engine.connect() as conn:
             book_index = request.path_params["book_index"]
 
-            # need 404 here
             bookmark_result = await conn.execute(
                 select(bookmarks).where(bookmarks.c.bm_seq == book_index)
             )
@@ -110,15 +109,9 @@ class BookMarkItem(HTTPEndpoint):
     async def put(self, request):
         async with request.app.state.engine.connect() as conn:
             post_bookmark = await request.json()
-            # need 400 here for bad bookindex
             book_index = request.path_params["book_index"]
-            try:
-                # same need 400/422? here if the payload is wrong
-                new_bookmark_pyd = BookMarkCreate(**post_bookmark)
-            except ValidationError:
-                raise HTTPException(422)
+            new_bookmark_pyd = BookMarkCreate(**post_bookmark)
 
-            # 422 here if the payload got past pydantic but couldnt be solved
             put_result = await conn.execute(
                 update(bookmarks)
                 .where(bookmarks.c.bm_seq == book_index)
@@ -148,7 +141,6 @@ class BookMarkItem(HTTPEndpoint):
 
     async def delete(self, request):
         async with request.app.state.engine.connect() as conn:
-            # need 400 here for bad bookindex
             book_index = request.path_params["book_index"]
 
             deleted_result = await conn.execute(
@@ -171,8 +163,6 @@ class BookMarkItem(HTTPEndpoint):
                 "page": deleted_item["page"],
                 "created_at": str(deleted_item["created_at"]),
             }
-
-            # can also return empty 204 of we dont want to return the body
             return JSONResponse(response_dict)
 
 
@@ -199,11 +189,7 @@ class BookMarkList(HTTPEndpoint):
         new_bookmark = await request.json()
 
         async with request.app.state.engine.connect() as conn:
-            try:
-                new_bookmark_pyd = BookMarkCreate(**new_bookmark)
-                # my new validation handler!
-            except ValidationError:
-                raise HTTPException(422)
+            new_bookmark_pyd = BookMarkCreate(**new_bookmark)
 
             post_result = await conn.execute(
                 insert(bookmarks)
