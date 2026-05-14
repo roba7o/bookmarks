@@ -127,18 +127,22 @@ class BookMarkItem(HTTPEndpoint):
 class BookMarkList(HTTPEndpoint):
     async def get(self, request):
         async with request.app.state.engine.connect() as conn:
-            bookmark_items = await conn.execute(select(BookMarks)).fetchall()
+            bookmark_items = await conn.execute(select(BookMarks))
+
+            print(f"bookmark_items is {bookmark_items}")
 
             full_response = [
                 {
-                    "bm_seq": n["bm_seq"],
-                    "title": n["title"],
-                    "author": n["author"],
-                    "page": n["page"],
-                    "created_at": str(n["created_at"]),
+                    "bm_seq": n[0],
+                    "title": n[1],
+                    "author": n[2],
+                    "page": n[3],
+                    "created_at": str(n[4]),
                 }
-                for n in bookmark_items
+                for n in bookmark_items.fetchall()
             ]
+
+            print(f"full response is: {full_response}")
 
             return JSONResponse(full_response)
 
