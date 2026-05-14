@@ -133,13 +133,13 @@ class BookMarkList(HTTPEndpoint):
 
             full_response = [
                 {
-                    "bm_seq": n[0],
-                    "title": n[1],
-                    "author": n[2],
-                    "page": n[3],
-                    "created_at": str(n[4]),
+                    "bm_seq": n["bm_seq"],
+                    "title": n["title"],
+                    "author": n["author"],
+                    "page": n["page"],
+                    "created_at": str(n["created_at"]),
                 }
-                for n in bookmark_items.fetchall()
+                for n in bookmark_items.mappings().fetchall()
             ]
 
             print(f"full response is: {full_response}")
