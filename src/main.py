@@ -1,3 +1,4 @@
+import logging
 import os
 from collections.abc import AsyncGenerator
 from contextlib import asynccontextmanager
@@ -15,6 +16,13 @@ from src import handlers
 from src.endpoints import BookMarkItem, BookMarkList, metadata
 
 load_dotenv()
+
+# configuring logging globally.
+logging.basicConfig(
+    level=logging.INFO, format="%(asctime)s - %(name)s - %(levelname)s - %(message)s"
+)
+
+logger = logging.getLogger(__name__)
 
 """
 TODO LIST

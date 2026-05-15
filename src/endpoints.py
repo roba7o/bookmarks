@@ -1,3 +1,5 @@
+import logging
+
 from pydantic import BaseModel
 from sqlalchemy import (
     Column,
@@ -16,6 +18,9 @@ from sqlalchemy import (
 from starlette.endpoints import HTTPEndpoint
 from starlette.exceptions import HTTPException
 from starlette.responses import JSONResponse
+
+logger = logging.getLogger(__name__)
+
 
 # Table instantiation - postgressqlalchemy
 metadata = MetaData()
