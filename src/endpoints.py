@@ -20,7 +20,7 @@ from starlette.responses import JSONResponse
 # Table instantiation - postgressqlalchemy
 metadata = MetaData()
 
-BookMarks = Table(
+bookmarks_table = Table(
     "bookmarks",
     metadata,
     Column("bm_seq", Integer, Identity(always=True), primary_key=True),
@@ -49,7 +49,7 @@ class BookMarkItem(HTTPEndpoint):
             book_index = request.path_params["book_index"]
 
             bookmark_result = await conn.execute(
-                select(BookMarks).where(BookMarks.c.bm_seq == book_index)
+                select(bookmarks_table).where(bookmarks_table.c.bm_seq == book_index)
             )
             bookmark_item = bookmark_result.mappings().fetchone()
             if bookmark_item is None:
@@ -71,14 +71,14 @@ class BookMarkItem(HTTPEndpoint):
             new_bookmark_pyd = BookMarkCreate(**post_bookmark)
 
             put_result = await conn.execute(
-                update(BookMarks)
-                .where(BookMarks.c.bm_seq == book_index)
+                update(bookmarks_table)
+                .where(bookmarks_table.c.bm_seq == book_index)
                 .values(
                     title=new_bookmark_pyd.title,
                     author=new_bookmark_pyd.author,
                     page=new_bookmark_pyd.page,
                 )
-                .returning(BookMarks)
+                .returning(bookmarks_table)
             )
 
             putted_item = put_result.mappings().fetchone()
@@ -102,9 +102,9 @@ class BookMarkItem(HTTPEndpoint):
             book_index = request.path_params["book_index"]
 
             deleted_result = await conn.execute(
-                delete(BookMarks)
-                .where(BookMarks.c.bm_seq == book_index)
-                .returning(BookMarks)
+                delete(bookmarks_table)
+                .where(bookmarks_table.c.bm_seq == book_index)
+                .returning(bookmarks_table)
             )
 
             deleted_item = deleted_result.mappings().fetchone()
@@ -127,7 +127,7 @@ class BookMarkItem(HTTPEndpoint):
 class BookMarkList(HTTPEndpoint):
     async def get(self, request):
         async with request.app.state.engine.connect() as conn:
-            bookmark_items = await conn.execute(select(BookMarks))
+            bookmark_items = await conn.execute(select(bookmarks_table))
 
             print(f"bookmark_items is {bookmark_items}")
 
@@ -153,13 +153,13 @@ class BookMarkList(HTTPEndpoint):
             new_bookmark_pyd = BookMarkCreate(**new_bookmark)
 
             post_result = await conn.execute(
-                insert(BookMarks)
+                insert(bookmarks_table)
                 .values(
                     title=new_bookmark_pyd.title,
                     author=new_bookmark_pyd.author,
                     page=new_bookmark_pyd.page,
                 )
-                .returning(BookMarks)
+                .returning(bookmarks_table)
             )
 
             posted_item = post_result.mappings().fetchone()

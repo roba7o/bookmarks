@@ -10,8 +10,8 @@ from starlette.applications import Starlette
 from starlette.exceptions import HTTPException
 from starlette.routing import Route
 
-from src import handlers
-from src.routers import BookMarkItem, BookMarkList, metadata
+import handlers
+from endpoints import BookMarkItem, BookMarkList, metadata
 
 load_dotenv()
 
