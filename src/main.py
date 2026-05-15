@@ -6,6 +6,7 @@ from dotenv import load_dotenv
 from pydantic import ValidationError
 from sqlalchemy.exc import DatabaseError, IntegrityError
 from sqlalchemy.ext.asyncio import create_async_engine
+from sqlalchemy.sql import text
 from starlette.applications import Starlette
 from starlette.exceptions import HTTPException
 from starlette.routing import Route
@@ -20,9 +21,6 @@ TODO LIST
 
 1) Alter these to alembic migrations once app is stable with necessary tables.
    Minimum tables being: bookmarks & users
-
-2) Change the parameter names and modularise each REST function. Namings of anything
-    related to bookmarks is terrible atm
 """
 
 
@@ -35,9 +33,15 @@ async def lifespan(app) -> AsyncGenerator:
     app.state.engine = create_async_engine(
         f"postgresql+asyncpg://{user}:{password}@localhost:5432/{db_name}", echo=True
     )
+
     async with app.state.engine.begin() as conn:
         await conn.run_sync(metadata.drop_all)
         await conn.run_sync(metadata.create_all)
+
+        # test data flagging
+        if os.getenv("SEED_DATA") == "true":
+            await conn.execute(text(open("SQL/02-GEN_SAMPLE_DATA.sql").read()))
+
     yield
     await app.state.engine.dispose()
 
