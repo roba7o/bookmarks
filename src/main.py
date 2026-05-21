@@ -24,13 +24,6 @@ logging.basicConfig(
 
 logger = logging.getLogger(__name__)
 
-"""
-TODO LIST
-
-1) Alter these to alembic migrations once app is stable with necessary tables.
-   Minimum tables being: bookmarks & users
-"""
-
 
 @asynccontextmanager
 async def lifespan(app) -> AsyncGenerator:

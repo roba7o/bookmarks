@@ -6,3 +6,6 @@ __pycache__/
 #claude skill to stop it writing code
 CLAUDE.md
 *.egg-info
+build/
+bookmarks.egg-info/
+
