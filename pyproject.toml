@@ -11,12 +11,8 @@ dependencies = [
     "asyncpg",
     "pydantic",
     "python-dotenv",
-    "SQLAlchemy",
     "sqlalchemy[asyncio]"
 ]
-
-[tool.setuptools.packages.find]
-where = ["src"]
 
 [tool.ruff]
 line-length = 88
