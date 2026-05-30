@@ -7,7 +7,6 @@ from dotenv import load_dotenv
 from pydantic import ValidationError
 from sqlalchemy.exc import DatabaseError, IntegrityError
 from sqlalchemy.ext.asyncio import create_async_engine
-from sqlalchemy.sql import text
 from starlette.applications import Starlette
 from starlette.exceptions import HTTPException
 from starlette.routing import Route
@@ -36,12 +35,7 @@ async def lifespan(app) -> AsyncGenerator:
     )
 
     async with app.state.engine.begin() as conn:
-        await conn.run_sync(metadata.drop_all)
         await conn.run_sync(metadata.create_all)
-
-        # test data flagging
-        if os.getenv("SEED_DATA") == "true":
-            await conn.execute(text(open("SQL/02-GEN_SAMPLE_DATA.sql").read()))
 
     yield
     await app.state.engine.dispose()
