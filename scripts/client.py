@@ -12,7 +12,7 @@ class Client:
         status = "authenticated" if self._token else "not authenticated"
         return f"<Client {status} base={self._http.base_url}>"
 
-
-if __name__ == "__main__":
-    c = Client()
-    print(c)
+    def get_all(self):
+        url = BASEURL + "/bookmarks"
+        print(url)
+        return self._http.get(url)
