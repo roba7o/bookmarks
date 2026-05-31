@@ -8,11 +8,6 @@ request helper so i see status codes
 
 
 class Client:
-    def _request(self, method: str, path: str, **kwargs):
-        r = self._http.request(method, path, **kwargs)
-        r.raise_for_status()
-        return r.json()
-
     def __init__(self, base_url: str = BASEURL):
         self._http = httpx.Client(base_url=base_url)
         self._token = None
@@ -20,6 +15,11 @@ class Client:
     def __repr__(self):
         status = "authenticated" if self._token else "not authenticated"
         return f"<Client {status} base={self._http.base_url}>"
+
+    def _request(self, method: str, path: str, **kwargs):
+        r = self._http.request(method, path, **kwargs)
+        r.raise_for_status()
+        return r.json()
 
     def list_all_bookmarks(self):
         return self._request("GET", "/bookmarks/")
