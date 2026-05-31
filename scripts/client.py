@@ -13,6 +13,6 @@ class Client:
         return f"<Client {status} base={self._http.base_url}>"
 
     def get_all(self):
-        url = BASEURL + "/bookmarks"
+        url = BASEURL + "/bookmarks/"
         print(url)
         return self._http.get(url)
