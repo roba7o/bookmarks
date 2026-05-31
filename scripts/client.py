@@ -21,3 +21,7 @@ class Client:
     def create_bookmark(self, title: str, author: str, page: int):
         json_post = {"title": title, "author": author, "page": page}
         return self._http.post(url="/bookmarks/", json=json_post)
+
+    def update_bookmark(self, book_id: int, title: str, author: str, page: int):
+        json_post = {"title": title, "author": author, "page": page}
+        return self._http.put(url=f"/bookmarks/{book_id}", json=json_post)
