@@ -40,6 +40,14 @@ bookmarks_table = Table(
     ),
 )
 
+user_table = Table(
+    "users",
+    metadata,
+    Column("username", Text, unique=True),
+    Column("user_id", Integer, Identity(always=True), primary_key=True),
+    Column("hashed_pw", Text),
+)
+
 
 # pydantic type strictening
 class BookMarkCreate(BaseModel):
