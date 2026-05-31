@@ -17,3 +17,7 @@ class Client:
 
     def specific_bookmark(self, index: int):
         return self._http.get(f"/bookmarks/{index}").json()
+
+    def create_bookmark(self, title: str, author: str, page: int):
+        json_post = {"title": title, "author": author, "page": page}
+        return self._http.post(url="/bookmarks/", json=json_post)
