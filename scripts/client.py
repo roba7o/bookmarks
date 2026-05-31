@@ -14,3 +14,6 @@ class Client:
 
     def list_all_bookmarks(self):
         return self._http.get("/bookmarks/").json()
+
+    def specific_bookmark(self, index: int):
+        return self._http.get(f"/bookmarks/{index}").json()
