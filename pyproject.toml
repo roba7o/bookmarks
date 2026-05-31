@@ -14,7 +14,10 @@ dependencies = [
     "sqlalchemy[asyncio]",
     "pyjwt",
     "passlib[bcrypt]",
-    "psycopg2"
+    "psycopg2",
+    "bcrypt",
+    "pyjwt",
+    "httpx"
 ]
 
 [tool.ruff]
