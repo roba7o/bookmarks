@@ -12,7 +12,7 @@ from starlette.exceptions import HTTPException
 from starlette.routing import Route
 
 from src import handlers
-from src.endpoints import BookMarkItem, BookMarkList, metadata
+from src.endpoints import AuthLogin, AuthRegister, BookMarkItem, BookMarkList, metadata
 
 load_dotenv()
 
@@ -47,6 +47,8 @@ app = Starlette(
     routes=[
         Route("/bookmarks/", endpoint=BookMarkList),
         Route("/bookmarks/{book_index:int}", endpoint=BookMarkItem),
+        Route("/auth/register", endpoint=AuthRegister),
+        Route("/auth/login", endpoint=AuthLogin),
     ],
     exception_handlers={
         ValidationError: handlers.invalid_payload_handler,

@@ -56,6 +56,12 @@ class BookMarkCreate(BaseModel):
     page: int
 
 
+class UserCreate(BaseModel):
+    username: str
+    password: str  # we type check the raw password not the hash!
+    # todo: type check against common passwords like a csv...
+
+
 class BookMarkItem(HTTPEndpoint):
     async def get(self, request):
         async with request.app.state.engine.connect() as conn:
@@ -183,3 +189,15 @@ class BookMarkList(HTTPEndpoint):
             }
 
             return JSONResponse(response_dict)
+
+
+class AuthRegister(HTTPEndpoint):
+    """ """
+
+    pass
+
+
+class AuthLogin(HTTPEndpoint):
+    """ """
+
+    pass
