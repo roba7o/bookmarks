@@ -12,7 +12,5 @@ class Client:
         status = "authenticated" if self._token else "not authenticated"
         return f"<Client {status} base={self._http.base_url}>"
 
-    def get_all(self):
-        url = BASEURL + "/bookmarks/"
-        print(url)
-        return self._http.get(url)
+    def list_all_bookmarks(self):
+        return self._http.get("/bookmarks/").json()
