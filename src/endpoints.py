@@ -60,6 +60,7 @@ class UserCreate(BaseModel):
     username: str
     password: str  # we type check the raw password not the hash!
     # todo: type check against common passwords like a csv...
+    # make it a SecretStr so i cant print it
 
 
 class BookMarkItem(HTTPEndpoint):
@@ -192,9 +193,30 @@ class BookMarkList(HTTPEndpoint):
 
 
 class AuthRegister(HTTPEndpoint):
-    """ """
+    async def post(self, request):
+        post_user_reg_creds = await request.json()
 
-    pass
+        async with request.app.state.engine.connect() as conn:
+            new_user = UserCreate(**post_user_reg_creds)
+
+            new_user_result = await conn.execute(
+                insert(user_table)
+                .values(username=new_user.username, hashed_pw=new_user.password)
+                .returning(user_table)
+            )
+
+            posted_password = new_user_result.mappings().fetchone()
+
+            await conn.commit()
+            response_dict = {
+                "username": posted_password["username"],
+                "password": posted_password["hashed_pw"],
+            }
+
+            return JSONResponse(response_dict)
+
+            # need to add screening so that identical usernames cant be added?
+            # or is this ok due to postgres constraint
 
 
 class AuthLogin(HTTPEndpoint):
