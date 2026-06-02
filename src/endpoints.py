@@ -1,7 +1,7 @@
 import logging
 import uuid
 
-from pydantic import BaseModel, EmailStr
+from pydantic import BaseModel, EmailStr, Field
 from sqlalchemy import (
     UUID,
     Column,
@@ -74,8 +74,9 @@ class BookMarkCreate(BaseModel):
 
 class UserCreate(BaseModel):
     email: EmailStr
-    password: str  # we type check the raw password not the hash!
-    # todo: type check against common passwords like a csv...
+    password: str = Field(min_length=8, max_length=20)
+    # we type check the raw password not the hash!
+    # todo: type check against common passwords like a csv
     # make it a SecretStr so i cant print it
 
 
