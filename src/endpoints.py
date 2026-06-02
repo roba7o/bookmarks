@@ -1,7 +1,9 @@
 import logging
+import uuid
 
 from pydantic import BaseModel
 from sqlalchemy import (
+    UUID,
     Column,
     DateTime,
     Identity,
@@ -40,16 +42,31 @@ bookmarks_table = Table(
     ),
 )
 
+
 user_table = Table(
     "users",
     metadata,
     Column("username", Text, unique=True, nullable=False),
-    Column("user_id", Integer, Identity(always=True), primary_key=True, nullable=False),
+    Column(
+        "user_id",
+        UUID(as_uuid=True),
+        primary_key=True,
+        nullable=False,
+        default=uuid.uuid4,
+    ),
     Column("hashed_pw", Text, nullable=False),
+    Column(
+        "created_at",
+        DateTime(timezone=True),
+        server_default=text("NOW()"),
+        nullable=False,
+    ),
 )
 
 
-# pydantic type strictening
+# Pydantic Schemas
+
+
 class BookMarkCreate(BaseModel):
     title: str
     author: str
@@ -61,6 +78,12 @@ class UserCreate(BaseModel):
     password: str  # we type check the raw password not the hash!
     # todo: type check against common passwords like a csv...
     # make it a SecretStr so i cant print it
+
+
+class LoginRequest(BaseModel):
+    username: str
+    password: str
+    # do i add token here?
 
 
 class BookMarkItem(HTTPEndpoint):
