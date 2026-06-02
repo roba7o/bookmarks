@@ -1,6 +1,7 @@
 import logging
 import uuid
 
+import bcrypt
 from pydantic import BaseModel, EmailStr, Field
 from sqlalchemy import (
     UUID,
@@ -224,9 +225,14 @@ class AuthRegister(HTTPEndpoint):
         async with request.app.state.engine.connect() as conn:
             new_user = UserCreate(**post_user_reg_creds)
 
+            # password -> bytes -> gen salt -> hash it all
+            password_bytes = new_user.password.encode("utf-8")
+            salt = bcrypt.gensalt()
+            hashed_w_salt = bcrypt.hashpw(password=password_bytes, salt=salt)
+
             new_user_result = await conn.execute(
                 insert(user_table)
-                .values(email=new_user.email, hashed_pw=new_user.password)
+                .values(email=new_user.email, hashed_pw=hashed_w_salt.decode("utf-8"))
                 .returning(user_table)
             )
 
