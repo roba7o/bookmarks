@@ -43,9 +43,9 @@ bookmarks_table = Table(
 user_table = Table(
     "users",
     metadata,
-    Column("username", Text, unique=True),
-    Column("user_id", Integer, Identity(always=True), primary_key=True),
-    Column("hashed_pw", Text),
+    Column("username", Text, unique=True, nullable=False),
+    Column("user_id", Integer, Identity(always=True), primary_key=True, nullable=False),
+    Column("hashed_pw", Text, nullable=False),
 )
 
 
@@ -196,6 +196,8 @@ class AuthRegister(HTTPEndpoint):
     async def post(self, request):
         post_user_reg_creds = await request.json()
 
+        print(post_user_reg_creds)
+
         async with request.app.state.engine.connect() as conn:
             new_user = UserCreate(**post_user_reg_creds)
 
@@ -213,10 +215,8 @@ class AuthRegister(HTTPEndpoint):
                 "password": posted_password["hashed_pw"],
             }
 
+            # eventually i will not return the password! i will return the JWT token
             return JSONResponse(response_dict)
-
-            # need to add screening so that identical usernames cant be added?
-            # or is this ok due to postgres constraint
 
 
 class AuthLogin(HTTPEndpoint):
