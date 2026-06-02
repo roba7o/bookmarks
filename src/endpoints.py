@@ -238,8 +238,10 @@ class AuthRegister(HTTPEndpoint):
                 "password": posted_password["hashed_pw"],
             }
 
+            logger.info(response_dict)
+
             # eventually i will not return the password! i will return the JWT token
-            return JSONResponse(response_dict)
+            return JSONResponse({"status": "ok"})
 
 
 class AuthLogin(HTTPEndpoint):
