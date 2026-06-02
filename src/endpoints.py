@@ -1,7 +1,7 @@
 import logging
 import uuid
 
-from pydantic import BaseModel
+from pydantic import BaseModel, EmailStr
 from sqlalchemy import (
     UUID,
     Column,
@@ -46,12 +46,11 @@ bookmarks_table = Table(
 user_table = Table(
     "users",
     metadata,
-    Column("username", Text, unique=True, nullable=False),
+    Column("email", Text, unique=True, nullable=False),
     Column(
         "user_id",
         UUID(as_uuid=True),
         primary_key=True,
-        nullable=False,
         default=uuid.uuid4,
     ),
     Column("hashed_pw", Text, nullable=False),
@@ -74,14 +73,14 @@ class BookMarkCreate(BaseModel):
 
 
 class UserCreate(BaseModel):
-    username: str
+    email: EmailStr
     password: str  # we type check the raw password not the hash!
     # todo: type check against common passwords like a csv...
     # make it a SecretStr so i cant print it
 
 
 class LoginRequest(BaseModel):
-    username: str
+    email: str
     password: str
     # do i add token here?
 
@@ -226,7 +225,7 @@ class AuthRegister(HTTPEndpoint):
 
             new_user_result = await conn.execute(
                 insert(user_table)
-                .values(username=new_user.username, hashed_pw=new_user.password)
+                .values(email=new_user.email, hashed_pw=new_user.password)
                 .returning(user_table)
             )
 
@@ -234,7 +233,7 @@ class AuthRegister(HTTPEndpoint):
 
             await conn.commit()
             response_dict = {
-                "username": posted_password["username"],
+                "email": posted_password["email"],
                 "password": posted_password["hashed_pw"],
             }
 
