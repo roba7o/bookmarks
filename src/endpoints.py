@@ -219,9 +219,6 @@ class BookMarkList(HTTPEndpoint):
 class AuthRegister(HTTPEndpoint):
     async def post(self, request):
         post_user_reg_creds = await request.json()
-
-        print(post_user_reg_creds)
-
         async with request.app.state.engine.connect() as conn:
             new_user = UserCreate(**post_user_reg_creds)
 
@@ -236,18 +233,12 @@ class AuthRegister(HTTPEndpoint):
                 .returning(user_table)
             )
 
-            posted_password = new_user_result.mappings().fetchone()
+            result = new_user_result.mappings().fetchone()
 
             await conn.commit()
-            response_dict = {
-                "email": posted_password["email"],
-                "password": posted_password["hashed_pw"],
-            }
-
-            logger.info(response_dict)
 
             # eventually i will not return the password! i will return the JWT token
-            return JSONResponse({"status": "ok"})
+            return JSONResponse({"status": "ok", "user_id": str(result["user_id"])})
 
 
 class AuthLogin(HTTPEndpoint):
