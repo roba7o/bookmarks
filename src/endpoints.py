@@ -242,6 +242,34 @@ class AuthRegister(HTTPEndpoint):
 
 
 class AuthLogin(HTTPEndpoint):
-    """ """
+    async def post(self, request):
+        post_user_login_creds = await request.json()
+        async with request.app.state.engine.connect() as conn:
+            login_user_creds = UserCreate(**post_user_login_creds)
 
-    pass
+            # select where email = login_user_creds.email is there
+            # if none -> invalid, if true -> verify login password
+            login_user_exec = await conn.execute(
+                select(user_table)
+                .where(email=login_user_creds.email)
+                .returning(user_table)
+            )
+
+            login_user_result = login_user_exec.mappings().fetchone()
+
+            if login_user_result is None:
+                raise HTTPException(401)
+
+            # encoding login password
+            login_pw_bytes = login_user_result["hashed_pw"].encode("utf-8")
+
+            # checking password
+            if bcrypt.checkpw(login_pw_bytes, hash):
+                return JSONResponse(
+                    {
+                        "status": "password checks out!",
+                        "user_id": str(login_user_result["user_id"]),
+                    }
+                )
+            else:
+                raise HTTPException(401)
