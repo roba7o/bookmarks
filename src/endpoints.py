@@ -245,14 +245,14 @@ class AuthLogin(HTTPEndpoint):
     async def post(self, request):
         post_user_login_creds = await request.json()
         async with request.app.state.engine.connect() as conn:
-            login_user_creds = UserCreate(**post_user_login_creds)
+            login_user_creds_request = LoginRequest(**post_user_login_creds)
 
             # select where email = login_user_creds.email is there
             # if none -> invalid, if true -> verify login password
             login_user_exec = await conn.execute(
-                select(user_table)
-                .where(email=login_user_creds.email)
-                .returning(user_table)
+                select(user_table).where(
+                    user_table.c.email == login_user_creds_request.email
+                )
             )
 
             login_user_result = login_user_exec.mappings().fetchone()
@@ -261,10 +261,16 @@ class AuthLogin(HTTPEndpoint):
                 raise HTTPException(401)
 
             # encoding login password
-            login_pw_bytes = login_user_result["hashed_pw"].encode("utf-8")
+            print(
+                f"hashed_pw is {login_user_result['hashed_pw']} \
+                  and is type {type(login_user_result['hashed_pw'])}"
+            )
 
             # checking password
-            if bcrypt.checkpw(login_pw_bytes, hash):
+            if bcrypt.checkpw(
+                password=login_user_creds_request.password.encode("utf-8"),
+                hashed_password=login_user_result["hashed_pw"].encode("utf-8"),
+            ):
                 return JSONResponse(
                     {
                         "status": "password checks out!",
