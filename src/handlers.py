@@ -11,11 +11,7 @@ logger = logging.getLogger(__name__)
 
 async def invalid_payload_handler(request: Request, exc: ValidationError):
     return JSONResponse(
-        {
-            "detail": "validation failed",
-            "code": "validation_error",
-            "errors": exc.errors(),
-        },
+        {"detail": "validation failed", "code": "validation_error"},
         status_code=422,
     )
 
@@ -42,7 +38,7 @@ async def db_database_gen_handler(request: Request, exc: DatabaseError):
 
 async def http_exception(request: Request, exc: HTTPException):
     return JSONResponse(
-        {"detail": exc.detail, "code": exc.status_code},
+        {"detail": exc.detail, "code": "HTTP Error"},
         status_code=exc.status_code,
     )
 
