@@ -31,7 +31,7 @@ async def lifespan(app) -> AsyncGenerator:
     db_name = os.getenv("DB_NAME")
 
     app.state.engine = create_async_engine(
-        f"postgresql+asyncpg://{user}:{password}@localhost:5432/{db_name}", echo=True
+        f"postgresql+asyncpg://{user}:{password}@localhost:5432/{db_name}", echo=False
     )
 
     async with app.state.engine.begin() as conn:
