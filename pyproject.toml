@@ -18,7 +18,8 @@ dependencies = [
     "bcrypt",
     "pyjwt",
     "httpx",
-    "email-validator"
+    "email-validator",
+    "pydantic[email]",
 ]
 
 [tool.ruff]
