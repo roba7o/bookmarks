@@ -260,12 +260,6 @@ class AuthLogin(HTTPEndpoint):
             if login_user_result is None:
                 raise HTTPException(401)
 
-            # encoding login password
-            print(
-                f"hashed_pw is {login_user_result['hashed_pw']} \
-                  and is type {type(login_user_result['hashed_pw'])}"
-            )
-
             # checking password
             if bcrypt.checkpw(
                 password=login_user_creds_request.password.encode("utf-8"),
