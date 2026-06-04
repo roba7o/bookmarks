@@ -22,6 +22,8 @@ from starlette.endpoints import HTTPEndpoint
 from starlette.exceptions import HTTPException
 from starlette.responses import JSONResponse
 
+from auth import issue_token
+
 logger = logging.getLogger(__name__)
 
 
@@ -237,8 +239,12 @@ class AuthRegister(HTTPEndpoint):
 
             await conn.commit()
 
+            # generate token
+            user_id = str(result["user_id"])
+            token = issue_token(user_id)
+
             # eventually i will not return the password! i will return the JWT token
-            return JSONResponse({"status": "ok", "user_id": str(result["user_id"])})
+            return JSONResponse({"status": "ok", "user_id": user_id, "token": token})
 
 
 class AuthLogin(HTTPEndpoint):
