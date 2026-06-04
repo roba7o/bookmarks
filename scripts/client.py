@@ -22,14 +22,14 @@ class Client:
         return r.json()
 
     def list_all_bookmarks(self):
-        return self._request("GET", "/bookmarks/")
+        return self._request("GET", "/bookmarks")
 
     def specific_bookmark(self, index: int):
         return self._request("GET", f"/bookmarks/{index}")
 
     def create_bookmark(self, title: str, author: str, page: int):
         json_post = {"title": title, "author": author, "page": page}
-        return self._request("POST", "/bookmarks/", json=json_post)
+        return self._request("POST", "/bookmarks", json=json_post)
 
     def update_bookmark(self, book_id: int, title: str, author: str, page: int):
         json_post = {"title": title, "author": author, "page": page}
@@ -37,3 +37,11 @@ class Client:
 
     def delete_bookmark(self, book_id: int):
         return self._request("DELETE", f"/bookmarks/{book_id}")
+
+    def create_user(self, email: str, password: str):
+        json_post = {"email": email, "password": password}
+        return self._request("POST", "/auth/register", json=json_post)
+
+    def login_user(self, email: str, password: str):
+        json_post = {"email": email, "password": password}
+        return self._request("POST", "/auth/login", json=json_post)
