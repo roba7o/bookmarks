@@ -1,3 +1,4 @@
+import jwt
 from starlette.middleware.base import BaseHTTPMiddleware
 from starlette.requests import Request
 from starlette.responses import JSONResponse
@@ -22,11 +23,20 @@ class AuthenticationMiddleware(BaseHTTPMiddleware):
                 content="Missing auth token mate",
                 status_code=401,
             )
-
-        if not decode_token(token):
+        try:
+            payload = decode_token(token)
+        except jwt.InvalidTokenError:
             return JSONResponse(
                 content="INVALID auth token mate",
                 status_code=401,
             )
+        except jwt.ExpiredSignatureError:
+            return JSONResponse(
+                content="EXPIRED token token mate",
+                status_code=401,
+            )
+
+        # printing payload for now
+        print(payload)
 
         return await call_next(request)
