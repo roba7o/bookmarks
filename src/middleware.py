@@ -7,10 +7,6 @@ from src.auth import decode_token
 
 class AuthenticationMiddleware(BaseHTTPMiddleware):
     async def dispatch(self, request: Request, call_next):
-        # tryin for get now
-        if request.method in ["OPTIONS", "GET"]:
-            return await call_next(request)
-
         if "auth" in request.url.path:
             return await call_next(request)
 
