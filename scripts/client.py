@@ -44,4 +44,6 @@ class Client:
 
     def login_user(self, email: str, password: str):
         json_post = {"email": email, "password": password}
-        return self._request("POST", "/auth/login", json=json_post)
+        result = self._request("POST", "/auth/login", json=json_post)
+        self._token = result["token"]
+        return result

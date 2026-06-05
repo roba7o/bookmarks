@@ -271,10 +271,15 @@ class AuthLogin(HTTPEndpoint):
                 password=login_user_creds_request.password.encode("utf-8"),
                 hashed_password=login_user_result["hashed_pw"].encode("utf-8"),
             ):
+                # Generate Token
+                user_id = str(login_user_result["user_id"])
+                token = issue_token(user_id)
+
                 return JSONResponse(
                     {
                         "status": "password checks out!",
                         "user_id": str(login_user_result["user_id"]),
+                        "token": token,
                     }
                 )
             else:
