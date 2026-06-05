@@ -2,7 +2,7 @@ from starlette.middleware.base import BaseHTTPMiddleware
 from starlette.requests import Request
 from starlette.responses import JSONResponse
 
-from auth import decode_token
+from src.auth import decode_token
 
 
 class AuthenticationMiddleware(BaseHTTPMiddleware):
