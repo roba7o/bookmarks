@@ -11,7 +11,7 @@ from starlette.applications import Starlette
 from starlette.exceptions import HTTPException
 from starlette.routing import Route
 
-from src import handlers
+from src import handlers, middleware
 from src.endpoints import AuthLogin, AuthRegister, BookMarkItem, BookMarkList, metadata
 
 load_dotenv()
@@ -57,4 +57,5 @@ app = Starlette(
         DatabaseError: handlers.db_database_gen_handler,
         Exception: handlers.unhandled,
     },
+    middleware=middleware,
 )
