@@ -9,6 +9,7 @@ from sqlalchemy.exc import DatabaseError, IntegrityError
 from sqlalchemy.ext.asyncio import create_async_engine
 from starlette.applications import Starlette
 from starlette.exceptions import HTTPException
+from starlette.middleware import Middleware
 from starlette.routing import Route
 
 from src import handlers, middleware
@@ -57,5 +58,5 @@ app = Starlette(
         DatabaseError: handlers.db_database_gen_handler,
         Exception: handlers.unhandled,
     },
-    middleware=middleware,
+    middleware=[Middleware(middleware.AuthenticationMiddleware)],
 )
