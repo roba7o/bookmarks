@@ -4,6 +4,7 @@ from starlette.requests import Request
 from starlette.responses import JSONResponse
 
 from src.auth import decode_token
+from src.settings import logger
 
 
 class AuthenticationMiddleware(BaseHTTPMiddleware):
@@ -15,8 +16,12 @@ class AuthenticationMiddleware(BaseHTTPMiddleware):
         if "auth" in request.url.path:
             return await call_next(request)
 
+        logger.info("Grabbing bearer data from header")
         bearer_data = request.headers.get("Authorization")
         token = bearer_data.replace("Bearer ", "") if bearer_data else None
+
+        # will remove but just for testing
+        logger.info(f"Bearer token is {str(token)[:6] + '******'}")
 
         if not token:
             return JSONResponse(
@@ -37,6 +42,7 @@ class AuthenticationMiddleware(BaseHTTPMiddleware):
             )
 
         # printing payload for now
-        print(payload)
+        logger.info(f"payload is {payload}")
+        request.state.user_id = payload["sub"]
 
         return await call_next(request)
