@@ -7,6 +7,7 @@ from sqlalchemy import (
     UUID,
     Column,
     DateTime,
+    ForeignKey,
     Identity,
     Integer,
     MetaData,
@@ -34,6 +35,7 @@ bookmarks_table = Table(
     "bookmarks",
     metadata,
     Column("bm_seq", Integer, Identity(always=True), primary_key=True),
+    Column("user_id", UUID(as_uuid=True), ForeignKey("users.user_id"), nullable=False),
     Column("title", Text, unique=True),
     Column("author", Text),
     Column("page", Integer),
@@ -91,11 +93,16 @@ class LoginRequest(BaseModel):
 
 class BookMarkItem(HTTPEndpoint):
     async def get(self, request):
+        # Grabbing the user_id that the middleware has assigned
+        user_id_from_state = request.state.user_id
+
         async with request.app.state.engine.connect() as conn:
             book_index = request.path_params["book_index"]
 
             bookmark_result = await conn.execute(
-                select(bookmarks_table).where(bookmarks_table.c.bm_seq == book_index)
+                select(bookmarks_table)
+                .where(bookmarks_table.c.bm_seq == book_index)
+                .where(bookmarks_table.c.user_id == user_id_from_state)
             )
             bookmark_item = bookmark_result.mappings().fetchone()
             if bookmark_item is None:
