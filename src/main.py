@@ -9,19 +9,22 @@ from starlette.exceptions import HTTPException
 from starlette.middleware import Middleware
 from starlette.routing import Route
 
-from src import handlers, middleware, settings
+from src import handlers, middleware
 from src.endpoints import AuthLogin, AuthRegister, BookMarkItem, BookMarkList, metadata
+from src.settings import DB_NAME, DB_PASSWORD, DB_USER, logger
 
 
 @asynccontextmanager
 async def lifespan(app) -> AsyncGenerator:
-    password = settings.DB_PASSWORD
-    user = settings.DB_USER
-    db_name = settings.DB_NAME
+    password = DB_PASSWORD
+    user = DB_USER
+    db_name = DB_NAME
 
     app.state.engine = create_async_engine(
         f"postgresql+asyncpg://{user}:{password}@localhost:5432/{db_name}", echo=False
     )
+
+    logger.info(f"Engine booted for db:'{db_name}' via lifespan")
 
     async with app.state.engine.begin() as conn:
         await conn.run_sync(metadata.create_all)
