@@ -1,13 +1,9 @@
 import datetime as dt
-import os
 
 import jwt
-from dotenv import load_dotenv
 
-load_dotenv()
+from src.settings import JWT_ALGO, JWT_SECRET, logger
 
-JWT_SECRET = os.environ["JWT_SECRET"]
-JWT_ALGO = os.environ["JWT_ALGORITHM"]
 JWT_TTL = dt.timedelta(hours=1)
 
 """
@@ -19,9 +15,9 @@ def issue_token(user_id: int) -> str:
     """
     Returns the token based on os.env vars
     """
-    # I would like to use the user_id and not the email as its more secure?
     now = dt.datetime.now(dt.timezone.utc)
     payload = {"sub": user_id, "iat": now, "exp": now + JWT_TTL}
+    logger.info("Token issued")
     return jwt.encode(payload=payload, key=JWT_SECRET, algorithm=JWT_ALGO)
 
 
@@ -31,9 +27,11 @@ def decode_token(token: str) -> dict:
 
     Q: what happens if i removed options?
     """
-    return jwt.decode(
+    token_decode = jwt.decode(
         token,
         key=JWT_SECRET,
         algorithms=[JWT_ALGO],
         options={"require": ["sub", "exp"]},
     )
+    logger.info("token decoded")
+    return token_decode
