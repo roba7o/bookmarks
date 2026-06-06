@@ -28,6 +28,8 @@ class Client:
         if self._token:
             headers["Authorization"] = f"Bearer {self._token}"
 
+        logger.info(f"Headers are: {headers}")
+
         r = self._http.request(method, path, headers=headers, **kwargs)
         r.raise_for_status()
         return r.json()
