@@ -194,8 +194,14 @@ class BookMarkItem(HTTPEndpoint):
 
 class BookMarkList(HTTPEndpoint):
     async def get(self, request):
+        user_id_from_state = request.state.user_id
+        logger.info(f"user_id is grabbed from state? {user_id_from_state}")
         async with request.app.state.engine.connect() as conn:
-            bookmark_items = await conn.execute(select(bookmarks_table))
+            bookmark_items = await conn.execute(
+                select(bookmarks_table).where(
+                    bookmarks_table.c.user_id == user_id_from_state
+                )
+            )
 
             full_response = [
                 {
