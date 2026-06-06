@@ -6,7 +6,6 @@ from sqlalchemy import (
     UUID,
     Column,
     DateTime,
-    ForeignKey,
     Identity,
     Integer,
     MetaData,
@@ -28,11 +27,13 @@ from src.settings import logger
 # Table instantiation - postgressqlalchemy
 metadata = MetaData()
 
+#    Column("user_id", UUID(as_uuid=True), ForeignKey("users.user_id"), nullable=False),
+
+
 bookmarks_table = Table(
     "bookmarks",
     metadata,
     Column("bm_seq", Integer, Identity(always=True), primary_key=True),
-    Column("user_id", UUID(as_uuid=True), ForeignKey("users.user_id"), nullable=False),
     Column("title", Text, unique=True),
     Column("author", Text),
     Column("page", Integer),
@@ -101,9 +102,7 @@ class BookMarkItem(HTTPEndpoint):
 
         async with request.app.state.engine.connect() as conn:
             bookmark_result = await conn.execute(
-                select(bookmarks_table)
-                .where(bookmarks_table.c.bm_seq == book_index)
-                .where(bookmarks_table.c.user_id == user_id_from_state)
+                select(bookmarks_table).where(bookmarks_table.c.bm_seq == book_index)
             )
             bookmark_item = bookmark_result.mappings().fetchone()
             if bookmark_item is None:
