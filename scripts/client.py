@@ -17,7 +17,11 @@ class Client:
         return f"<Client {status} base={self._http.base_url}>"
 
     def _request(self, method: str, path: str, **kwargs):
-        r = self._http.request(method, path, **kwargs)
+        headers = {}
+        if self._token:
+            headers["Authorization"] = f"Bearer {self._token}"
+
+        r = self._http.request(method, path, headers=headers, **kwargs)
         r.raise_for_status()
         return r.json()
 
