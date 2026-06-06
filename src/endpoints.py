@@ -161,12 +161,17 @@ class BookMarkItem(HTTPEndpoint):
             return JSONResponse(response_dict)
 
     async def delete(self, request):
+        user_id_from_state = request.state.user_id
+        logger.info(f"user_id is grabbed from state? {user_id_from_state}")
         async with request.app.state.engine.connect() as conn:
             book_index = request.path_params["book_index"]
 
             deleted_result = await conn.execute(
                 delete(bookmarks_table)
-                .where(bookmarks_table.c.bm_seq == book_index)
+                .where(
+                    bookmarks_table.c.bm_seq == book_index,
+                    bookmarks_table.c.user_id == user_id_from_state,
+                )
                 .returning(bookmarks_table)
             )
 
