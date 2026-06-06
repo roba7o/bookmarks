@@ -1,9 +1,6 @@
-import logging
-import os
 from collections.abc import AsyncGenerator
 from contextlib import asynccontextmanager
 
-from dotenv import load_dotenv
 from pydantic import ValidationError
 from sqlalchemy.exc import DatabaseError, IntegrityError
 from sqlalchemy.ext.asyncio import create_async_engine
@@ -12,24 +9,15 @@ from starlette.exceptions import HTTPException
 from starlette.middleware import Middleware
 from starlette.routing import Route
 
-from src import handlers, middleware
+from src import handlers, middleware, settings
 from src.endpoints import AuthLogin, AuthRegister, BookMarkItem, BookMarkList, metadata
-
-load_dotenv()
-
-# configuring logging globally.
-logging.basicConfig(
-    level=logging.INFO, format="%(asctime)s - %(name)s - %(levelname)s - %(message)s"
-)
-
-logger = logging.getLogger(__name__)
 
 
 @asynccontextmanager
 async def lifespan(app) -> AsyncGenerator:
-    password = os.getenv("DB_PASSWORD")
-    user = os.getenv("DB_USER")
-    db_name = os.getenv("DB_NAME")
+    password = settings.DB_PASSWORD
+    user = settings.DB_USER
+    db_name = settings.DB_NAME
 
     app.state.engine = create_async_engine(
         f"postgresql+asyncpg://{user}:{password}@localhost:5432/{db_name}", echo=False
