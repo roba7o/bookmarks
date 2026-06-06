@@ -6,6 +6,7 @@ from sqlalchemy import (
     UUID,
     Column,
     DateTime,
+    ForeignKey,
     Identity,
     Integer,
     MetaData,
@@ -27,13 +28,12 @@ from src.settings import logger
 # Table instantiation - postgressqlalchemy
 metadata = MetaData()
 
-#    Column("user_id", UUID(as_uuid=True), ForeignKey("users.user_id"), nullable=False),
-
 
 bookmarks_table = Table(
     "bookmarks",
     metadata,
     Column("bm_seq", Integer, Identity(always=True), primary_key=True),
+    Column("user_id", UUID(as_uuid=True), ForeignKey("users.user_id"), nullable=False),
     Column("title", Text, unique=True),
     Column("author", Text),
     Column("page", Integer),
@@ -94,6 +94,7 @@ class BookMarkItem(HTTPEndpoint):
         # Grabbing the user_id that the middleware has assigned
 
         user_id_from_state = request.state.user_id
+        logger.info(f"user_id is grabbed from state? {user_id_from_state}")
         book_index = request.path_params["book_index"]
 
         logger.info(
@@ -102,7 +103,10 @@ class BookMarkItem(HTTPEndpoint):
 
         async with request.app.state.engine.connect() as conn:
             bookmark_result = await conn.execute(
-                select(bookmarks_table).where(bookmarks_table.c.bm_seq == book_index)
+                select(bookmarks_table).where(
+                    bookmarks_table.c.bm_seq == book_index,
+                    bookmarks_table.c.user_id == user_id_from_state,
+                )
             )
             bookmark_item = bookmark_result.mappings().fetchone()
             if bookmark_item is None:
@@ -118,6 +122,11 @@ class BookMarkItem(HTTPEndpoint):
             return JSONResponse(response_dict)
 
     async def put(self, request):
+        # grabbing the user_id from the request so a bookmark is created with a user
+
+        user_id_from_state = request.state.user_id
+        logger.info(f"user_id is grabbed from state? {user_id_from_state}")
+
         async with request.app.state.engine.connect() as conn:
             post_bookmark = await request.json()
             book_index = request.path_params["book_index"]
@@ -129,6 +138,7 @@ class BookMarkItem(HTTPEndpoint):
                 .values(
                     title=new_bookmark_pyd.title,
                     author=new_bookmark_pyd.author,
+                    user_id=user_id_from_state,
                     page=new_bookmark_pyd.page,
                 )
                 .returning(bookmarks_table)
@@ -197,6 +207,10 @@ class BookMarkList(HTTPEndpoint):
 
     async def post(self, request):
         new_bookmark = await request.json()
+        # grabbing the user_id from the request so a bookmark is created with a user
+
+        user_id_from_state = request.state.user_id
+        logger.info(f"user_id is grabbed from state? {user_id_from_state}")
 
         async with request.app.state.engine.connect() as conn:
             new_bookmark_pyd = BookMarkCreate(**new_bookmark)
@@ -207,6 +221,7 @@ class BookMarkList(HTTPEndpoint):
                     title=new_bookmark_pyd.title,
                     author=new_bookmark_pyd.author,
                     page=new_bookmark_pyd.page,
+                    user_id=user_id_from_state,
                 )
                 .returning(bookmarks_table)
             )
