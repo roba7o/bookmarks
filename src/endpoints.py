@@ -1,4 +1,3 @@
-import logging
 import uuid
 
 import bcrypt
@@ -24,9 +23,7 @@ from starlette.exceptions import HTTPException
 from starlette.responses import JSONResponse
 
 from auth import issue_token
-
-logger = logging.getLogger(__name__)
-
+from src.settings import logger
 
 # Table instantiation - postgressqlalchemy
 metadata = MetaData()
@@ -94,11 +91,15 @@ class LoginRequest(BaseModel):
 class BookMarkItem(HTTPEndpoint):
     async def get(self, request):
         # Grabbing the user_id that the middleware has assigned
+
         user_id_from_state = request.state.user_id
+        book_index = request.path_params["book_index"]
+
+        logger.info(
+            f"Request data - user_id:'{user_id_from_state}', book_index:'{book_index}'"
+        )
 
         async with request.app.state.engine.connect() as conn:
-            book_index = request.path_params["book_index"]
-
             bookmark_result = await conn.execute(
                 select(bookmarks_table)
                 .where(bookmarks_table.c.bm_seq == book_index)
