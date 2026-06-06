@@ -1,6 +1,9 @@
 import httpx
 
+from src.settings import logger
+
 BASEURL = "http://localhost:8000"
+
 
 """
 request helper so i see status codes
@@ -11,13 +14,17 @@ class Client:
     def __init__(self, base_url: str = BASEURL):
         self._http = httpx.Client(base_url=base_url)
         self._token = None
+        self._logged_in = False
 
     def __repr__(self):
         status = "authenticated" if self._token else "not authenticated"
         return f"<Client {status} base={self._http.base_url}>"
 
     def _request(self, method: str, path: str, **kwargs):
+        logger.info(f"Performing method:{method} for path:{path}")
+        logger.info(f"Am i logged in: '{self._logged_in}'")
         headers = {}
+        logger.info(f"token is {self._token}")
         if self._token:
             headers["Authorization"] = f"Bearer {self._token}"
 
@@ -50,4 +57,5 @@ class Client:
         json_post = {"email": email, "password": password}
         result = self._request("POST", "/auth/login", json=json_post)
         self._token = result["token"]
+        self._logged_in = True
         return result
