@@ -61,3 +61,6 @@ class Client:
         self._token = result["token"]
         self._logged_in = True
         return result
+
+    def who_am_i(self):
+        return self._request("GET", "auth/me")
