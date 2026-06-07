@@ -22,7 +22,7 @@ from starlette.endpoints import HTTPEndpoint
 from starlette.exceptions import HTTPException
 from starlette.responses import JSONResponse
 
-from auth import issue_token
+from src.auth import issue_token
 from src.settings import logger
 
 # Table instantiation - postgressqlalchemy
@@ -134,11 +134,13 @@ class BookMarkItem(HTTPEndpoint):
 
             put_result = await conn.execute(
                 update(bookmarks_table)
-                .where(bookmarks_table.c.bm_seq == book_index)
+                .where(
+                    bookmarks_table.c.bm_seq == book_index,
+                    bookmarks_table.c.user_id == user_id_from_state,
+                )
                 .values(
                     title=new_bookmark_pyd.title,
                     author=new_bookmark_pyd.author,
-                    user_id=user_id_from_state,
                     page=new_bookmark_pyd.page,
                 )
                 .returning(bookmarks_table)
