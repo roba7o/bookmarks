@@ -337,7 +337,7 @@ class AuthMe(HTTPEndpoint):
 
             user_result_item = user_search_result.mappings().fetchone()
 
-            if user_id_from_state is None:
+            if user_search_result is None:
                 logger.info(
                     "user id cant be found in AuthMe.. something has went wrong"
                 )
