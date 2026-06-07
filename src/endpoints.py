@@ -320,31 +320,32 @@ class AuthLogin(HTTPEndpoint):
             else:
                 raise HTTPException(401)
 
-    class AuthMe(HTTPEndpoint):
-        async def get(self, request):
-            # Grabbing the user_id which i can then just use as select clause
 
-            user_id_from_state = request.state.user_id
-            logger.info(f"Grabbing user_id for AuthMe: {user_id_from_state}")
+class AuthMe(HTTPEndpoint):
+    async def get(self, request):
+        # Grabbing the user_id which i can then just use as select clause
 
-            async with request.app.state.engine.connect() as conn:
-                user_search_result = await conn.execute(
-                    select(user_table).where(
-                        user_table.c.user_id == user_id_from_state,
-                    )
+        user_id_from_state = request.state.user_id
+        logger.info(f"Grabbing user_id for AuthMe: {user_id_from_state}")
+
+        async with request.app.state.engine.connect() as conn:
+            user_search_result = await conn.execute(
+                select(user_table).where(
+                    user_table.c.user_id == user_id_from_state,
                 )
+            )
 
-                user_result_item = user_search_result.mappings().fetchone()
+            user_result_item = user_search_result.mappings().fetchone()
 
-                if user_id_from_state is None:
-                    logger.info(
-                        "user id cant be found in AuthMe.. something has went wrong"
-                    )
-                    raise HTTPException(404)
+            if user_id_from_state is None:
+                logger.info(
+                    "user id cant be found in AuthMe.. something has went wrong"
+                )
+                raise HTTPException(404)
 
-                response_dict = {
-                    "user_id": user_result_item["user_id"],
-                    "email": user_result_item["email"],
-                }
+            response_dict = {
+                "user_id": user_result_item["user_id"],
+                "email": user_result_item["email"],
+            }
 
-                return JSONResponse(response_dict)
+            return JSONResponse(response_dict)

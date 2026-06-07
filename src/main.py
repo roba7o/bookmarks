@@ -10,7 +10,14 @@ from starlette.middleware import Middleware
 from starlette.routing import Route
 
 from src import handlers, middleware
-from src.endpoints import AuthLogin, AuthRegister, BookMarkItem, BookMarkList, metadata
+from src.endpoints import (
+    AuthLogin,
+    AuthMe,
+    AuthRegister,
+    BookMarkItem,
+    BookMarkList,
+    metadata,
+)
 from src.settings import DB_NAME, DB_PASSWORD, DB_USER, logger
 
 
@@ -41,6 +48,7 @@ app = Starlette(
         Route("/bookmarks/{book_index:int}", endpoint=BookMarkItem),
         Route("/auth/register", endpoint=AuthRegister),
         Route("/auth/login", endpoint=AuthLogin),
+        Route("/auth/me", endpoint=AuthMe),
     ],
     exception_handlers={
         ValidationError: handlers.invalid_payload_handler,

@@ -13,7 +13,7 @@ class AuthenticationMiddleware(BaseHTTPMiddleware):
         if request.method in ["OPTIONS"]:
             return await call_next(request)
 
-        if "auth" in request.url.path:
+        if request.url.path in ["/auth/register", "/auth/login/"]:
             return await call_next(request)
 
         logger.info("Grabbing bearer data from header")
