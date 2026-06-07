@@ -344,7 +344,7 @@ class AuthMe(HTTPEndpoint):
                 raise HTTPException(404)
 
             response_dict = {
-                "user_id": user_result_item["user_id"],
+                "user_id": str(user_result_item["user_id"]),
                 "email": user_result_item["email"],
             }
 
