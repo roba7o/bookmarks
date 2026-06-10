@@ -9,8 +9,7 @@ from starlette.exceptions import HTTPException
 from starlette.middleware import Middleware
 from starlette.routing import Route
 
-from src import handlers, middleware
-from src.endpoints import (
+from routes.bookmarks import (
     AuthLogin,
     AuthMe,
     AuthRegister,
@@ -18,7 +17,10 @@ from src.endpoints import (
     BookMarkList,
     metadata,
 )
+from src import middleware
 from src.settings import DB_NAME, DB_PASSWORD, DB_USER, logger
+
+from . import exception_handlers
 
 
 @asynccontextmanager
@@ -51,11 +53,11 @@ app = Starlette(
         Route("/auth/me", endpoint=AuthMe),
     ],
     exception_handlers={
-        ValidationError: handlers.invalid_payload_handler,
-        HTTPException: handlers.http_exception,
-        IntegrityError: handlers.db_integrity_handler,
-        DatabaseError: handlers.db_database_gen_handler,
-        Exception: handlers.unhandled,
+        ValidationError: exception_handlers.invalid_payload_handler,
+        HTTPException: exception_handlers.http_exception,
+        IntegrityError: exception_handlers.db_integrity_handler,
+        DatabaseError: exception_handlers.db_database_gen_handler,
+        Exception: exception_handlers.unhandled,
     },
     middleware=[Middleware(middleware.AuthenticationMiddleware)],
 )

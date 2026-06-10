@@ -1,92 +1,15 @@
-import uuid
-
-import bcrypt
-from pydantic import BaseModel, EmailStr, Field
 from sqlalchemy import (
-    UUID,
-    Column,
-    DateTime,
-    ForeignKey,
-    Identity,
-    Integer,
-    MetaData,
-    Table,
-    Text,
     delete,
     insert,
     select,
-    text,
     update,
 )
 from starlette.endpoints import HTTPEndpoint
 from starlette.exceptions import HTTPException
 from starlette.responses import JSONResponse
 
-from src.auth import issue_token
+from src.schemas import BookMarkCreate, bookmarks_table
 from src.settings import logger
-
-# Table instantiation - postgressqlalchemy
-metadata = MetaData()
-
-
-bookmarks_table = Table(
-    "bookmarks",
-    metadata,
-    Column("bm_seq", Integer, Identity(always=True), primary_key=True),
-    Column("user_id", UUID(as_uuid=True), ForeignKey("users.user_id"), nullable=False),
-    Column("title", Text, unique=True),
-    Column("author", Text),
-    Column("page", Integer),
-    Column(
-        "created_at",
-        DateTime(timezone=True),
-        server_default=text("NOW()"),
-        nullable=False,
-    ),
-)
-
-
-user_table = Table(
-    "users",
-    metadata,
-    Column("email", Text, unique=True, nullable=False),
-    Column(
-        "user_id",
-        UUID(as_uuid=True),
-        primary_key=True,
-        default=uuid.uuid4,
-    ),
-    Column("hashed_pw", Text, nullable=False),
-    Column(
-        "created_at",
-        DateTime(timezone=True),
-        server_default=text("NOW()"),
-        nullable=False,
-    ),
-)
-
-
-# Pydantic Schemas
-
-
-class BookMarkCreate(BaseModel):
-    title: str
-    author: str
-    page: int
-
-
-class UserCreate(BaseModel):
-    email: EmailStr
-    password: str = Field(min_length=8, max_length=20)
-    # we type check the raw password not the hash!
-    # todo: type check against common passwords like a csv
-    # make it a SecretStr so i cant print it
-
-
-class LoginRequest(BaseModel):
-    email: str
-    password: str
-    # do i add token here?
 
 
 class BookMarkItem(HTTPEndpoint):
@@ -248,104 +171,6 @@ class BookMarkList(HTTPEndpoint):
                 "author": posted_item["author"],
                 "page": posted_item["page"],
                 "created_at": str(posted_item["created_at"]),
-            }
-
-            return JSONResponse(response_dict)
-
-
-class AuthRegister(HTTPEndpoint):
-    async def post(self, request):
-        post_user_reg_creds = await request.json()
-        async with request.app.state.engine.connect() as conn:
-            new_user = UserCreate(**post_user_reg_creds)
-
-            # password -> bytes -> gen salt -> hash it all
-            password_bytes = new_user.password.encode("utf-8")
-            salt = bcrypt.gensalt()
-            hashed_w_salt = bcrypt.hashpw(password=password_bytes, salt=salt)
-
-            new_user_result = await conn.execute(
-                insert(user_table)
-                .values(email=new_user.email, hashed_pw=hashed_w_salt.decode("utf-8"))
-                .returning(user_table)
-            )
-
-            result = new_user_result.mappings().fetchone()
-
-            await conn.commit()
-
-            # generate token
-            user_id = str(result["user_id"])
-            token = issue_token(user_id)
-
-            # eventually i will not return the password! i will return the JWT token
-            return JSONResponse({"status": "ok", "user_id": user_id, "token": token})
-
-
-class AuthLogin(HTTPEndpoint):
-    async def post(self, request):
-        post_user_login_creds = await request.json()
-        async with request.app.state.engine.connect() as conn:
-            login_user_creds_request = LoginRequest(**post_user_login_creds)
-
-            # select where email = login_user_creds.email is there
-            # if none -> invalid, if true -> verify login password
-            login_user_exec = await conn.execute(
-                select(user_table).where(
-                    user_table.c.email == login_user_creds_request.email
-                )
-            )
-
-            login_user_result = login_user_exec.mappings().fetchone()
-
-            if login_user_result is None:
-                raise HTTPException(401)
-
-            # checking password
-            if bcrypt.checkpw(
-                password=login_user_creds_request.password.encode("utf-8"),
-                hashed_password=login_user_result["hashed_pw"].encode("utf-8"),
-            ):
-                # Generate Token
-                user_id = str(login_user_result["user_id"])
-                token = issue_token(user_id)
-
-                return JSONResponse(
-                    {
-                        "status": "password checks out!",
-                        "user_id": str(login_user_result["user_id"]),
-                        "token": token,
-                    }
-                )
-            else:
-                raise HTTPException(401)
-
-
-class AuthMe(HTTPEndpoint):
-    async def get(self, request):
-        # Grabbing the user_id which i can then just use as select clause
-
-        user_id_from_state = request.state.user_id
-        logger.info(f"Grabbing user_id for AuthMe: {user_id_from_state}")
-
-        async with request.app.state.engine.connect() as conn:
-            user_search_result = await conn.execute(
-                select(user_table).where(
-                    user_table.c.user_id == user_id_from_state,
-                )
-            )
-
-            user_result_item = user_search_result.mappings().fetchone()
-
-            if user_search_result is None:
-                logger.info(
-                    "user id cant be found in AuthMe.. something has went wrong"
-                )
-                raise HTTPException(404)
-
-            response_dict = {
-                "user_id": str(user_result_item["user_id"]),
-                "email": user_result_item["email"],
             }
 
             return JSONResponse(response_dict)
