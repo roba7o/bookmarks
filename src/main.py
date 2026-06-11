@@ -14,11 +14,16 @@ from routes.bookmarks import (
     BookMarkItem,
     BookMarkList,
 )
-from src import middleware
+from src.exception_handlers import (
+    db_database_gen_handler,
+    db_integrity_handler,
+    http_exception,
+    invalid_payload_handler,
+    unhandled,
+)
+from src.middleware import AuthenticationMiddleware
 from src.schemas import metadata
 from src.settings import DB_NAME, DB_PASSWORD, DB_USER, logger
-
-from . import exception_handlers
 
 
 @asynccontextmanager
@@ -51,11 +56,11 @@ app = Starlette(
         Route("/auth/me", endpoint=AuthMe),
     ],
     exception_handlers={
-        ValidationError: exception_handlers.invalid_payload_handler,
-        HTTPException: exception_handlers.http_exception,
-        IntegrityError: exception_handlers.db_integrity_handler,
-        DatabaseError: exception_handlers.db_database_gen_handler,
-        Exception: exception_handlers.unhandled,
+        ValidationError: invalid_payload_handler,
+        HTTPException: http_exception,
+        IntegrityError: db_integrity_handler,
+        DatabaseError: db_database_gen_handler,
+        Exception: unhandled,
     },
-    middleware=[Middleware(middleware.AuthenticationMiddleware)],
+    middleware=[Middleware(AuthenticationMiddleware)],
 )
