@@ -1,60 +1,35 @@
-import logging
-
-from pydantic import BaseModel
 from sqlalchemy import (
-    Column,
-    DateTime,
-    Identity,
-    Integer,
-    MetaData,
-    Table,
-    Text,
     delete,
     insert,
     select,
-    text,
     update,
 )
 from starlette.endpoints import HTTPEndpoint
 from starlette.exceptions import HTTPException
 from starlette.responses import JSONResponse
 
-logger = logging.getLogger(__name__)
-
-
-# Table instantiation - postgressqlalchemy
-metadata = MetaData()
-
-bookmarks_table = Table(
-    "bookmarks",
-    metadata,
-    Column("bm_seq", Integer, Identity(always=True), primary_key=True),
-    Column("title", Text, unique=True),
-    Column("author", Text),
-    Column("page", Integer),
-    Column(
-        "created_at",
-        DateTime(timezone=True),
-        server_default=text("NOW()"),
-        nullable=False,
-    ),
-)
-
-
-# pydantic type strictening
-class BookMarkCreate(BaseModel):
-    title: str
-    author: str
-    page: int
+from src.schemas import BookMarkCreate, bookmarks_table
+from src.settings import logger
 
 
 class BookMarkItem(HTTPEndpoint):
     async def get(self, request):
-        async with request.app.state.engine.connect() as conn:
-            book_index = request.path_params["book_index"]
+        # Grabbing the user_id that the middleware has assigned
 
+        user_id_from_state = request.state.user_id
+        logger.info(f"user_id is grabbed from state? {user_id_from_state}")
+        book_index = request.path_params["book_index"]
+
+        logger.info(
+            f"Request data - user_id:'{user_id_from_state}', book_index:'{book_index}'"
+        )
+
+        async with request.app.state.engine.connect() as conn:
             bookmark_result = await conn.execute(
-                select(bookmarks_table).where(bookmarks_table.c.bm_seq == book_index)
+                select(bookmarks_table).where(
+                    bookmarks_table.c.bm_seq == book_index,
+                    bookmarks_table.c.user_id == user_id_from_state,
+                )
             )
             bookmark_item = bookmark_result.mappings().fetchone()
             if bookmark_item is None:
@@ -70,6 +45,11 @@ class BookMarkItem(HTTPEndpoint):
             return JSONResponse(response_dict)
 
     async def put(self, request):
+        # grabbing the user_id from the request so a bookmark is created with a user
+
+        user_id_from_state = request.state.user_id
+        logger.info(f"user_id is grabbed from state? {user_id_from_state}")
+
         async with request.app.state.engine.connect() as conn:
             post_bookmark = await request.json()
             book_index = request.path_params["book_index"]
@@ -77,7 +57,10 @@ class BookMarkItem(HTTPEndpoint):
 
             put_result = await conn.execute(
                 update(bookmarks_table)
-                .where(bookmarks_table.c.bm_seq == book_index)
+                .where(
+                    bookmarks_table.c.bm_seq == book_index,
+                    bookmarks_table.c.user_id == user_id_from_state,
+                )
                 .values(
                     title=new_bookmark_pyd.title,
                     author=new_bookmark_pyd.author,
@@ -103,12 +86,17 @@ class BookMarkItem(HTTPEndpoint):
             return JSONResponse(response_dict)
 
     async def delete(self, request):
+        user_id_from_state = request.state.user_id
+        logger.info(f"user_id is grabbed from state? {user_id_from_state}")
         async with request.app.state.engine.connect() as conn:
             book_index = request.path_params["book_index"]
 
             deleted_result = await conn.execute(
                 delete(bookmarks_table)
-                .where(bookmarks_table.c.bm_seq == book_index)
+                .where(
+                    bookmarks_table.c.bm_seq == book_index,
+                    bookmarks_table.c.user_id == user_id_from_state,
+                )
                 .returning(bookmarks_table)
             )
 
@@ -131,8 +119,14 @@ class BookMarkItem(HTTPEndpoint):
 
 class BookMarkList(HTTPEndpoint):
     async def get(self, request):
+        user_id_from_state = request.state.user_id
+        logger.info(f"user_id is grabbed from state? {user_id_from_state}")
         async with request.app.state.engine.connect() as conn:
-            bookmark_items = await conn.execute(select(bookmarks_table))
+            bookmark_items = await conn.execute(
+                select(bookmarks_table).where(
+                    bookmarks_table.c.user_id == user_id_from_state
+                )
+            )
 
             full_response = [
                 {
@@ -149,6 +143,10 @@ class BookMarkList(HTTPEndpoint):
 
     async def post(self, request):
         new_bookmark = await request.json()
+        # grabbing the user_id from the request so a bookmark is created with a user
+
+        user_id_from_state = request.state.user_id
+        logger.info(f"user_id is grabbed from state? {user_id_from_state}")
 
         async with request.app.state.engine.connect() as conn:
             new_bookmark_pyd = BookMarkCreate(**new_bookmark)
@@ -159,6 +157,7 @@ class BookMarkList(HTTPEndpoint):
                     title=new_bookmark_pyd.title,
                     author=new_bookmark_pyd.author,
                     page=new_bookmark_pyd.page,
+                    user_id=user_id_from_state,
                 )
                 .returning(bookmarks_table)
             )
