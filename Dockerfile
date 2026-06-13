@@ -4,6 +4,8 @@ WORKDIR /app
 
 # establish a install cache for the packages only
 # any change to src does not affect cache
+# either change to requirements.txt (two sources of truth)
+# or use uv pip install...
 COPY pyproject.toml ./
 RUN pip install --no-cache-dir .
 
