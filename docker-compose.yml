@@ -3,9 +3,9 @@ services:
     image: postgres:14
     container_name: bookmarks-db
     environment:
-      - POSTGRES_USER = ${DB_USER}
-      - POSTGRES_PASSWORD = ${DB_PASSWORD}
-      - POSTGRES_DB = ${DB_NAME}
+      POSTGRES_USER: ${DB_USER}
+      POSTGRES_PASSWORD: ${DB_PASSWORD}
+      POSTGRES_DB: ${DB_NAME}
     ports:
       - "5432:5432"
     volumes:
@@ -18,9 +18,9 @@ services:
     depends_on:
       - db
     environment:
-      - DATABASE_URL=postgresql://{DB_USER}:{DB_PASSWORD}@{DB_NAME}:5432/mydb
-      - JWT_ALGORITHM = ${JWT_ALGORITHM}
-      - JWT_SECRET = ${JWT_SECRET}
+      DATABASE_URL: postgresql+asyncpg://${DB_USER}:${DB_PASSWORD}@db:5432/${DB_NAME}
+      JWT_ALGORITHM: ${JWT_ALGORITHM}
+      JWT_SECRET: ${JWT_SECRET}
 
 volumes:
   pgdata:
