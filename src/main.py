@@ -9,11 +9,6 @@ from starlette.exceptions import HTTPException
 from starlette.middleware import Middleware
 from starlette.routing import Route
 
-from routes.auth import AuthLogin, AuthMe, AuthRegister
-from routes.bookmarks import (
-    BookMarkItem,
-    BookMarkList,
-)
 from src.exception_handlers import (
     db_database_gen_handler,
     db_integrity_handler,
@@ -22,6 +17,11 @@ from src.exception_handlers import (
     unhandled,
 )
 from src.middleware import AuthenticationMiddleware
+from src.routes.auth import AuthLogin, AuthMe, AuthRegister
+from src.routes.bookmarks import (
+    BookMarkItem,
+    BookMarkList,
+)
 from src.schemas import metadata
 from src.settings import DATABASE_URL, DB_NAME, logger
 
