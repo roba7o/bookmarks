@@ -9,18 +9,14 @@ dependencies = [
     "starlette",
     "uvicorn",
     "asyncpg",
-    "pydantic",
-    "python-dotenv",
     "sqlalchemy[asyncio]",
-    "pyjwt",
-    "passlib[bcrypt]",
-    "psycopg2",
-    "bcrypt",
-    "pyjwt",
-    "httpx",
-    "email-validator",
     "pydantic[email]",
+    "python-dotenv",
+    "pyjwt",
+    "bcrypt",
+    "httpx",
 ]
+
 
 [tool.ruff]
 line-length = 88
