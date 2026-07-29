@@ -7,9 +7,9 @@ from starlette.endpoints import HTTPEndpoint
 from starlette.exceptions import HTTPException
 from starlette.responses import JSONResponse
 
-from src.auth import issue_token
-from src.schemas import LoginRequest, UserCreate, user_table
-from src.settings import logger
+from bookmarks.auth import issue_token
+from bookmarks.schemas import LoginRequest, UserCreate, user_table
+from bookmarks.settings import logger
 
 
 class AuthRegister(HTTPEndpoint):

@@ -9,21 +9,21 @@ from starlette.exceptions import HTTPException
 from starlette.middleware import Middleware
 from starlette.routing import Route
 
-from src.exception_handlers import (
+from bookmarks.exception_handlers import (
     db_database_gen_handler,
     db_integrity_handler,
     http_exception,
     invalid_payload_handler,
     unhandled,
 )
-from src.middleware import AuthenticationMiddleware
-from src.routes.auth import AuthLogin, AuthMe, AuthRegister
-from src.routes.bookmarks import (
+from bookmarks.middleware import AuthenticationMiddleware
+from bookmarks.routes.auth import AuthLogin, AuthMe, AuthRegister
+from bookmarks.routes.bookmarks import (
     BookMarkItem,
     BookMarkList,
 )
-from src.schemas import metadata
-from src.settings import DATABASE_URL, DB_NAME, logger
+from bookmarks.schemas import metadata
+from bookmarks.settings import DATABASE_URL, DB_NAME, logger
 
 
 @asynccontextmanager

@@ -2,7 +2,7 @@ import datetime as dt
 
 import jwt
 
-from src.settings import JWT_ALGO, JWT_SECRET, logger
+from bookmarks.settings import JWT_ALGO, JWT_SECRET, logger
 
 JWT_TTL = dt.timedelta(hours=1)
 
