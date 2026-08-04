@@ -3,8 +3,8 @@ from starlette.middleware.base import BaseHTTPMiddleware
 from starlette.requests import Request
 from starlette.responses import JSONResponse
 
-from bookmarks.auth import decode_token
 from bookmarks.settings import logger
+from bookmarks.token import decode_token
 
 
 class AuthenticationMiddleware(BaseHTTPMiddleware):
