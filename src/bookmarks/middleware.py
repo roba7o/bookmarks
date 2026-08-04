@@ -9,7 +9,15 @@ from bookmarks.settings import logger
 
 class AuthenticationMiddleware(BaseHTTPMiddleware):
     async def dispatch(self, request: Request, call_next):
-        # tryin for get now
+        """
+        Auth middleware = a gate with an ALLOWLIST of public paths:
+
+        OPTIONS                     → let through  (CORS preflight, no creds)
+        /auth/register, /auth/login → let through  (bootstrap — how you GET a token)
+        everything else             → require a valid Bearer token, else 401
+
+        """
+
         if request.method in ["OPTIONS"]:
             return await call_next(request)
 

@@ -23,6 +23,7 @@ services:
       DATABASE_URL: postgresql+asyncpg://${DB_USER}:${DB_PASSWORD}@db:5432/${DB_NAME}
       JWT_ALGORITHM: ${JWT_ALGORITHM}
       JWT_SECRET: ${JWT_SECRET}
+      DEBUG: ${DEBUG}
 
 volumes:
   pgdata:
