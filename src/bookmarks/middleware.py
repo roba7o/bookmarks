@@ -38,14 +38,14 @@ class AuthenticationMiddleware(BaseHTTPMiddleware):
             )
         try:
             payload = decode_token(token)
-        except jwt.InvalidTokenError:
-            return JSONResponse(
-                content="INVALID auth token mate",
-                status_code=401,
-            )
         except jwt.ExpiredSignatureError:
             return JSONResponse(
                 content="EXPIRED token token mate",
+                status_code=401,
+            )
+        except jwt.InvalidTokenError:
+            return JSONResponse(
+                content="INVALID auth token mate",
                 status_code=401,
             )
 
