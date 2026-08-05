@@ -8,8 +8,8 @@ from starlette.endpoints import HTTPEndpoint
 from starlette.exceptions import HTTPException
 from starlette.responses import JSONResponse
 
-from src.schemas import BookMarkCreate, bookmarks_table
-from src.settings import logger
+from bookmarks.schemas import BookMarkCreate, bookmarks_table
+from bookmarks.settings import logger
 
 
 class BookMarkItem(HTTPEndpoint):

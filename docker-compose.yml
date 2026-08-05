@@ -9,9 +9,21 @@ services:
     ports:
       - "5432:5432"
     volumes:
-      - db:/var/lib/postgresql/data
-      # - ./SQL/01-CREATE_TABLE.sql:/docker-entrypoint-initdb.d/01-create.sql
-      # - ./SQL/02-GEN_SAMPLE_DATA.sql:/docker-entrypoint-initdb.d/02-sample.sql
+      - pgdata:/var/lib/postgresql/data
+
+  app:
+    build:
+      context: .
+      dockerfile: Dockerfile
+    ports:
+      - "8000:8000"
+    depends_on:
+      - db
+    environment:
+      DATABASE_URL: postgresql+asyncpg://${DB_USER}:${DB_PASSWORD}@db:5432/${DB_NAME}
+      JWT_ALGORITHM: ${JWT_ALGORITHM}
+      JWT_SECRET: ${JWT_SECRET}
+      DEBUG: ${DEBUG}
 
 volumes:
-  db:
+  pgdata:

@@ -1,6 +1,6 @@
 import httpx
 
-from src.settings import logger
+from bookmarks.settings import logger
 
 BASEURL = "http://localhost:8000"
 

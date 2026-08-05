@@ -3,13 +3,21 @@ from starlette.middleware.base import BaseHTTPMiddleware
 from starlette.requests import Request
 from starlette.responses import JSONResponse
 
-from src.auth import decode_token
-from src.settings import logger
+from bookmarks.settings import logger
+from bookmarks.token import decode_token
 
 
 class AuthenticationMiddleware(BaseHTTPMiddleware):
     async def dispatch(self, request: Request, call_next):
-        # tryin for get now
+        """
+        Auth middleware = a gate with an ALLOWLIST of public paths:
+
+        OPTIONS                     → let through  (CORS preflight, no creds)
+        /auth/register, /auth/login → let through  (bootstrap — how you GET a token)
+        everything else             → require a valid Bearer token, else 401
+
+        """
+
         if request.method in ["OPTIONS"]:
             return await call_next(request)
 
@@ -30,14 +38,14 @@ class AuthenticationMiddleware(BaseHTTPMiddleware):
             )
         try:
             payload = decode_token(token)
-        except jwt.InvalidTokenError:
-            return JSONResponse(
-                content="INVALID auth token mate",
-                status_code=401,
-            )
         except jwt.ExpiredSignatureError:
             return JSONResponse(
                 content="EXPIRED token token mate",
+                status_code=401,
+            )
+        except jwt.InvalidTokenError:
+            return JSONResponse(
+                content="INVALID auth token mate",
                 status_code=401,
             )
 
