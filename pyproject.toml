@@ -28,4 +28,5 @@ select = ["E", "F", "I"]
 [dependency-groups]
 dev = [
     "ipython>=9.15.0",
+    "locust>=2.46.3",
 ]
