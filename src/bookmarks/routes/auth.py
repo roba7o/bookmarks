@@ -3,6 +3,7 @@ from sqlalchemy import (
     insert,
     select,
 )
+from starlette.concurrency import run_in_threadpool
 from starlette.endpoints import HTTPEndpoint
 from starlette.exceptions import HTTPException
 from starlette.responses import JSONResponse
@@ -60,8 +61,9 @@ class AuthLogin(HTTPEndpoint):
             if login_user_result is None:
                 raise HTTPException(401)
 
-            # checking password
-            if bcrypt.checkpw(
+            # checking password -> now concurrent
+            if await run_in_threadpool(
+                bcrypt.checkpw,
                 password=login_user_creds_request.password.encode("utf-8"),
                 hashed_password=login_user_result["hashed_pw"].encode("utf-8"),
             ):
