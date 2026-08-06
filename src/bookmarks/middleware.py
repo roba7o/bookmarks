@@ -24,12 +24,12 @@ class AuthenticationMiddleware(BaseHTTPMiddleware):
         if request.url.path in ["/auth/register", "/auth/login"]:
             return await call_next(request)
 
-        logger.info("Grabbing bearer data from header")
+        # logger.info("Grabbing bearer data from header")
         bearer_data = request.headers.get("Authorization")
         token = bearer_data.replace("Bearer ", "") if bearer_data else None
 
         # will remove but just for testing
-        logger.info(f"Bearer token is {str(token)[:6] + '******'}")
+        # logger.info(f"Bearer token is {str(token)[:6] + '******'}")
 
         if not token:
             return JSONResponse(
@@ -50,7 +50,7 @@ class AuthenticationMiddleware(BaseHTTPMiddleware):
             )
 
         # printing payload for now
-        logger.info(f"payload is {payload}")
+        logger.info("Successful token aquisition in middleware")
         request.state.user_id = payload["sub"]
 
         return await call_next(request)
