@@ -14,6 +14,7 @@ token_pass = os.getenv("TEST_DB_PW")
 
 class BookmarkAuthUser(HttpUser):
     wait_time = between(1, 2)
+    host = BASEURL
 
     def __init__(self, *args, **kwargs):
         super().__init__(*args, **kwargs)
@@ -32,7 +33,7 @@ class BookmarkAuthUser(HttpUser):
 
         # not doing token check as i will log in everytime
         json_post = {"email": token_email, "password": token_pass}
-        response = self.client.post(f"{BASEURL}/auth/login", json=json_post)
+        response = self.client.post("/auth/login", json=json_post)
 
         if response.status_code == 200:
             data = response.json()
@@ -55,7 +56,7 @@ class BookmarkAuthUser(HttpUser):
         headers = {"Authorization": f"Bearer {token}"}
 
         with self.client.get(
-            f"{BASEURL}/bookmarks", headers=headers, catch_response=True
+            "/bookmarks", headers=headers, catch_response=True
         ) as response:
             if response.status_code == 200:
                 response.success()
