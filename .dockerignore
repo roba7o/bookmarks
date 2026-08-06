@@ -34,5 +34,6 @@ CLAUDE.md
 .pre-commit-config.yaml
 .ruff_cache/
 **/scripts
+**/locust_load
 LICENSE
 README.md

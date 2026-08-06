@@ -51,7 +51,7 @@ class BookmarkAuthUser(HttpUser):
     @task
     def authenticated_request(self):
         """Make a reqest with jwt token"""
-        token = self.get_token()  # in case its been an hour since on_start()
+        token = self.token  # in case its been an hour since on_start()
 
         headers = {"Authorization": f"Bearer {token}"}
 

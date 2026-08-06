@@ -22,6 +22,9 @@ build/
 .coverage
 htmlcov/
 
+# Load-test output (keep the scenarios + scripts tracked, drop the results)
+locust_load/results/
+
 # Editors / OS
 .vscode/
 .DS_Store
