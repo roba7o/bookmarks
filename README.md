@@ -43,7 +43,7 @@ Useful for `--reload`. Postgres still runs in Docker.
 ```bash
 docker compose up -d db
 uv sync
-uv run uvicorn src.main:app --reload
+uv run uvicorn src.bookmarks.main:app --reload
 ```
 
 This path reads `DATABASE_URL` from `.env` via `load_dotenv()`, so `.env` needs
@@ -51,6 +51,37 @@ a host-facing URL:
 
 ```
 DATABASE_URL=postgresql+asyncpg://<DB_USER>:<DB_PASSWORD>@localhost:5432/<DB_NAME>
+```
+
+### Run modes (`RUN_MODE`)
+
+The app **requires** `RUN_MODE` (`DEV` or `LOAD`), read in
+[settings.py](src/bookmarks/settings.py):
+
+| `RUN_MODE` | debug | log level | use for |
+|---|---|---|---|
+| `DEV`  | on  | `INFO`    | everyday development |
+| `LOAD` | off | `WARNING` | load testing — quiet logs, no traceback leaked in responses |
+
+Keep `RUN_MODE=DEV` in `.env` as the default (so normal commands need no prefix),
+and override only when load testing:
+
+```bash
+# everyday — DEV comes from .env, no prefix needed
+uv run uvicorn src.bookmarks.main:app
+uv run ipython -i scripts/reload.py
+
+# load test — put the APP into LOAD mode
+RUN_MODE=LOAD uv run uvicorn src.bookmarks.main:app
+```
+
+**Locust does not take `RUN_MODE`.** It's a *separate process* that only fires
+HTTP at the app — it never imports `settings`, so `RUN_MODE` means nothing to it.
+The mode changes how the **app** behaves, so it goes on the `uvicorn` command.
+Run Locust plainly against the app:
+
+```bash
+uv run locust -f locust_load/test_locust_from_docs.py
 ```
 
 ### Tables
