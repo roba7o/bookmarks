@@ -1,16 +1,10 @@
 #!/bin/bash
-# usage: run locust test files with a name and will save results
-# ./locust_load/run_locust.sh <testfile> (without.py)
-name="${1}_locust.py"
-ts="$(date +'%d%m%Y-%H%M')"
-ECHO "Running: $name"
+# usage: ./locust_load/run_locust.sh <name>    e.g. "basic"  (no .py, no _locust)
+ts="$(date +'%d%m%Y-%H%M')"                 # 06082026-1442
+outdir="locust_load/results/$1/$ts"         # results/basic/06082026-1442/
+mkdir -p "$outdir"                          # create it (+ parents)
 
-
-
-
-uv run locust -f "locust_load/$name" \
+uv run locust -f "locust_load/${1}_locust.py" \
     --headless -u 100 -r 10 -t 60s \
-    --csv="locust_load/results/$1/${ts}_${1}" \
-    --html="locust_load/results/$1/${ts}_${1}.html"
-
-
+    --csv="$outdir/$1" \
+    --html="$outdir/$1.html"
