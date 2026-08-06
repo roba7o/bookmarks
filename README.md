@@ -81,12 +81,12 @@ The mode changes how the **app** behaves, so it goes on the `uvicorn` command.
 Run Locust plainly against the app:
 
 ```bash
-uv run locust -f locust_load/test_locust_from_docs.py
+uv run locust -f locust_load/basic_locust.py
 ```
 
 ### Tables
 
-The lifespan in [src/main.py](src/main.py) runs `metadata.create_all` on every
+The lifespan in [src/bookmarks/main.py](src/bookmarks/main.py) runs `metadata.create_all` on every
 boot. It creates missing tables and leaves existing ones alone — it does not
 drop or migrate. To change a column you currently have to wipe the volume:
 
@@ -114,7 +114,7 @@ c.list_all_bookmarks()
 ## Endpoints
 
 Every route except `/auth/register` and `/auth/login` requires an
-`Authorization: Bearer <token>` header. [src/middleware.py](src/middleware.py)
+`Authorization: Bearer <token>` header. [src/bookmarks/middleware.py](src/bookmarks/middleware.py)
 decodes it and puts the user id on `request.state.user_id`; the bookmark
 queries filter on that, so a user only ever sees their own rows.
 
@@ -140,8 +140,8 @@ Paths are registered without a trailing slash.
 
 ### Errors
 
-Handlers are wired up in [src/main.py](src/main.py) and defined in
-[src/exception_handlers.py](src/exception_handlers.py). They return
+Handlers are wired up in [src/bookmarks/main.py](src/bookmarks/main.py) and defined in
+[src/bookmarks/exception_handlers.py](src/bookmarks/exception_handlers.py). They return
 `{"detail": ..., "code": ...}`:
 
 - **404** — resource doesn't exist, or belongs to another user
@@ -162,9 +162,10 @@ handler chain, and its body is a bare JSON string rather than an object.
 | `DATABASE_URL` | Full async SQLAlchemy URL the app connects with |
 | `JWT_SECRET` | HMAC signing key for tokens |
 | `JWT_ALGORITHM` | Signing algorithm (`HS256`) |
+| `RUN_MODE` | `DEV` or `LOAD` — sets debug + log level (see Run modes above). **Required** |
 
 `JWT_SECRET` and `JWT_ALGORITHM` are read with `os.environ[...]` in
-[src/settings.py](src/settings.py), so the app fails at import if they're
+[src/bookmarks/settings.py](src/bookmarks/settings.py), so the app fails at import if they're
 missing rather than starting up unsigned.
 
 ## Project layout
@@ -186,16 +187,18 @@ bookmarks/
 │   ├── reload.py                 ← ipython entrypoint
 │   └── seed.py                   ← loads 02-GEN_SAMPLE_DATA.sql
 ├── docs/                         ← learning notes + plans (gitignored)
+├── locust_load/                  ← Locust scenarios + runner (results/ gitignored)
 └── src/
-    ├── main.py                   ← Starlette app, lifespan, route + handler wiring
-    ├── settings.py               ← env loading + logging config
-    ├── schemas.py                ← SQLAlchemy tables + Pydantic models
-    ├── auth.py                   ← issue/decode JWTs
-    ├── middleware.py             ← bearer-token authentication
-    ├── exception_handlers.py     ← global exception handlers
-    └── routes/
-        ├── auth.py               ← register / login / me
-        └── bookmarks.py          ← bookmark CRUD
+    └── bookmarks/                ← the app package
+        ├── main.py               ← Starlette app, lifespan, route + handler wiring
+        ├── settings.py           ← env loading + logging config
+        ├── schemas.py            ← SQLAlchemy tables + Pydantic models
+        ├── token.py              ← issue/decode JWTs
+        ├── middleware.py         ← bearer-token authentication
+        ├── exception_handlers.py ← global exception handlers
+        └── routes/
+            ├── auth.py           ← register / login / me
+            └── bookmarks.py      ← bookmark CRUD
 ```
 
 ## Known rough edges
@@ -207,9 +210,12 @@ Tracked here rather than fixed, because working through them is the point.
   supply one — so seeding fails against the schema the app now creates.
   `scripts/seed.py` also imports `psycopg2`, which isn't in `pyproject.toml`.
 - **`bookmarks.title` is globally unique.** The comment in
-  [src/schemas.py](src/schemas.py) says bookmarks only need to be unique per
+  [src/bookmarks/schemas.py](src/bookmarks/schemas.py) says bookmarks only need to be unique per
   user, but the constraint isn't scoped to `user_id` — so two users can't save
   the same title. Wants a composite unique constraint.
+- **`register` still hashes on the event loop.** Load testing showed synchronous
+  `bcrypt` blocking the loop; `login` was moved to `run_in_threadpool`, but
+  `register`'s `bcrypt.hashpw` is still a blocking call on the loop. Same fix pending.
 - **No healthcheck on `db`.** The `app` service uses `depends_on`, which waits
   for the container to start, not for Postgres to accept connections. First boot
   after `down -v` can race.
@@ -218,6 +224,8 @@ Tracked here rather than fixed, because working through them is the point.
 
 ## Status
 
-Phase 3 (JWT auth) built: registration, login, `/auth/me`, bearer-token
-middleware, and per-user scoping on every bookmark query. The app is
-containerised and dependency management has moved to uv.
+Phase 3 (JWT auth) complete. Since then the app has been migrated into a proper
+`src/bookmarks` package, containerised, moved to uv, and load-tested with Locust.
+Load testing exposed the login endpoint's synchronous `bcrypt` blocking the event
+loop — fixed by offloading it via `run_in_threadpool`. Paused here as a learning
+milestone (see Known rough edges for what's deliberately left).
