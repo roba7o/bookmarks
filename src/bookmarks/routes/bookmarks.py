@@ -17,12 +17,9 @@ class BookMarkItem(HTTPEndpoint):
         # Grabbing the user_id that the middleware has assigned
 
         user_id_from_state = request.state.user_id
-        logger.info(f"user_id is grabbed from state? {user_id_from_state}")
         book_index = request.path_params["book_index"]
 
-        logger.info(
-            f"Request data - user_id:'{user_id_from_state}', book_index:'{book_index}'"
-        )
+        logger.info(f"GET bookmark/{book_index} - user_id:'{user_id_from_state}'")
 
         async with request.app.state.engine.connect() as conn:
             bookmark_result = await conn.execute(
@@ -48,11 +45,12 @@ class BookMarkItem(HTTPEndpoint):
         # grabbing the user_id from the request so a bookmark is created with a user
 
         user_id_from_state = request.state.user_id
-        logger.info(f"user_id is grabbed from state? {user_id_from_state}")
 
         async with request.app.state.engine.connect() as conn:
             post_bookmark = await request.json()
             book_index = request.path_params["book_index"]
+            logger.info(f"PUT bookmark/{book_index} - user_id:'{user_id_from_state}'")
+
             new_bookmark_pyd = BookMarkCreate(**post_bookmark)
 
             put_result = await conn.execute(
@@ -87,9 +85,11 @@ class BookMarkItem(HTTPEndpoint):
 
     async def delete(self, request):
         user_id_from_state = request.state.user_id
-        logger.info(f"user_id is grabbed from state? {user_id_from_state}")
+
         async with request.app.state.engine.connect() as conn:
             book_index = request.path_params["book_index"]
+
+            logger.info(f"DEL bookmark/{book_index} - user_id:'{user_id_from_state}'")
 
             deleted_result = await conn.execute(
                 delete(bookmarks_table)
@@ -120,7 +120,8 @@ class BookMarkItem(HTTPEndpoint):
 class BookMarkList(HTTPEndpoint):
     async def get(self, request):
         user_id_from_state = request.state.user_id
-        logger.info(f"user_id is grabbed from state? {user_id_from_state}")
+        logger.info(f"GET all bookmarks - user_id:'{user_id_from_state}'")
+
         async with request.app.state.engine.connect() as conn:
             bookmark_items = await conn.execute(
                 select(bookmarks_table).where(
@@ -146,7 +147,7 @@ class BookMarkList(HTTPEndpoint):
         # grabbing the user_id from the request so a bookmark is created with a user
 
         user_id_from_state = request.state.user_id
-        logger.info(f"user_id is grabbed from state? {user_id_from_state}")
+        logger.info(f"POST new bookmark/ - user_id:'{user_id_from_state}'")
 
         async with request.app.state.engine.connect() as conn:
             new_bookmark_pyd = BookMarkCreate(**new_bookmark)

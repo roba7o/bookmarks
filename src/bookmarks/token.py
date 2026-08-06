@@ -33,5 +33,5 @@ def decode_token(token: str) -> dict:
         algorithms=[JWT_ALGO],
         options={"require": ["sub", "exp"]},
     )
-    logger.info("token decoded")
+    # logger.info("token decoded")
     return token_decode

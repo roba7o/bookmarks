@@ -23,7 +23,7 @@ from bookmarks.routes.bookmarks import (
     BookMarkList,
 )
 from bookmarks.schemas import metadata
-from bookmarks.settings import DATABASE_URL, DB_NAME, logger
+from bookmarks.settings import DATABASE_URL, DB_NAME, DEBUG, logger
 
 
 @asynccontextmanager
@@ -40,7 +40,7 @@ async def lifespan(app) -> AsyncGenerator:
 
 
 app = Starlette(
-    debug=True,
+    debug=DEBUG,
     lifespan=lifespan,
     routes=[
         Route("/bookmarks", endpoint=BookMarkList),
