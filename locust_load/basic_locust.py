@@ -1,76 +1,41 @@
 import os
-import time
 
+import requests
 from dotenv import load_dotenv
-from locust import HttpUser, between, task
+from locust import HttpUser, between, events, task
 
 load_dotenv()
 
 BASEURL = "http://localhost:8000"
+CREDS = {"email": os.getenv("TEST_DB_EMAIL"), "password": os.getenv("TEST_DB_PW")}
 
-token_email = os.getenv("TEST_DB_EMAIL")
-token_pass = os.getenv("TEST_DB_PW")
-
+# task mix: LOGIN_WEIGHT logins (bcrypt) for every 3 bookmark reads
 LOGIN_WEIGHT = int(os.getenv("LOGIN_WEIGHT", "1"))
-BOOKMARKS_WEIGHT = int(os.getenv("BOOKMARKS_WEIGHT", "3"))
+BOOKMARKS_WEIGHT = 3
+
+shared_token = None
+
+
+@events.test_start.add_listener
+def login_once(environment, **kwargs):
+    """One login before users spawn -> no bcrypt burst at startup"""
+    global shared_token
+    response = requests.post(f"{BASEURL}/auth/login", json=CREDS)
+    response.raise_for_status()
+    shared_token = response.json()["token"]
 
 
 class BookmarkAuthUser(HttpUser):
     wait_time = between(1, 2)
     host = BASEURL
 
-    def __init__(self, *args, **kwargs):
-        super().__init__(*args, **kwargs)
-        self.token = None
-        self.token_expiry = 0
-
-    def get_token(self):
-        """
-        Obtaining token either fresh if none exists or expired
-
-        not sure how to see if a tokens expired with our salted hash
-
-        should i just login everytime?
-
-        """
-
-        # not doing token check as i will log in everytime
-        json_post = {"email": token_email, "password": token_pass}
-        response = self.client.post("/auth/login", json=json_post)
-
-        if response.status_code == 200:
-            data = response.json()
-            self.token = data["token"]
-
-            # we know that the token expires after 1 hour
-            self.token_expiry = time.time() + 3600
-            return self.token
-        else:
-            raise Exception(f"Login failed: {response.status_code}")
-
-    def on_start(self):
-        self.get_token()
-
     @task(LOGIN_WEIGHT)
     def login(self):
-        """Repeated login -> keeps bcrypt actuallyunder load"""
-        self.get_token()
+        """Repeated login -> keeps bcrypt under load"""
+        self.client.post("/auth/login", json=CREDS)
 
     @task(BOOKMARKS_WEIGHT)
-    def authenticated_request(self):
-        """Make a reqest with jwt token"""
-        token = self.token  # in case its been an hour since on_start()
-
-        headers = {"Authorization": f"Bearer {token}"}
-
-        with self.client.get(
-            "/bookmarks", headers=headers, catch_response=True
-        ) as response:
-            if response.status_code == 200:
-                response.success()
-            elif response.status_code == 401:
-                # Token expired, force refresh
-                self.token = None
-                response.failure("Token expired")
-            else:
-                response.failure(f"Status: {response.status_code}")
+    def bookmarks(self):
+        """Cheap request with the shared jwt token"""
+        headers = {"Authorization": f"Bearer {shared_token}"}
+        self.client.get("/bookmarks", headers=headers)

@@ -1,20 +1,16 @@
 #!/bin/bash
-# bcrypt threadpool experiment: for each mode, start the server, load it with
-# Locust, and log its CPU.
+# bcrypt threadpool experiment: for each user count and mode, start the server,
+# load it with Locust, and log its CPU. Plot with scripts/plot_experiment.py.
 #
 # usage: ./locust_load/run_experiment.sh
-# knobs (env vars): MODES="true false" REPEATS=1 USERS=100 SPAWN_RATE=1000
-#                   DURATION=45s LOGIN_WEIGHT=1 BOOKMARKS_WEIGHT=3
+# knobs (env vars): USERS_LIST="10 25 50 100 200" REPEATS=3 DURATION=45s LOGIN_WEIGHT=1
 set -euo pipefail
 cd "$(dirname "$0")/.."
 
-MODES="${MODES:-true false}"
-REPEATS="${REPEATS:-1}"
-USERS="${USERS:-100}"
-SPAWN_RATE="${SPAWN_RATE:-1000}"
+REPEATS="${REPEATS:-3}"
+USERS_LIST="${USERS_LIST:-10 25 50 100 200}"
 DURATION="${DURATION:-45s}"
 export LOGIN_WEIGHT="${LOGIN_WEIGHT:-1}"
-export BOOKMARKS_WEIGHT="${BOOKMARKS_WEIGHT:-3}"
 
 URL="http://localhost:8000"
 outroot="locust_load/results/experiment/$(date +'%d%m%Y-%H%M')"
@@ -56,12 +52,13 @@ if server_up; then
     exit 1
 fi
 
-# --- 2. one run per mode ---------------------------------------------------
+# --- 2. one run per (repeat, user count, mode) ------------------------------
 for run in $(seq 1 "$REPEATS"); do
-    for mode in $MODES; do
-        outdir="$outroot/threadpool_${mode}_run${run}"
+  for users in $USERS_LIST; do
+    for mode in true false; do
+        outdir="$outroot/users_${users}_threadpool_${mode}_run${run}"
         mkdir -p "$outdir"
-        echo "=== threadpool=$mode run=$run -> $outdir"
+        echo "=== users=$users threadpool=$mode run=$run -> $outdir"
 
         BCRYPT_IN_THREADPOOL="$mode" uv run uvicorn src.bookmarks.main:app \
             >"$outdir/server.log" 2>&1 &
@@ -75,21 +72,22 @@ for run in $(seq 1 "$REPEATS"); do
 
         cat >"$outdir/config.txt" <<EOF
 BCRYPT_IN_THREADPOOL=$mode
-USERS=$USERS
-SPAWN_RATE=$SPAWN_RATE
+USERS=$users
+RUN=$run
+CORES=$(sysctl -n hw.ncpu)
 DURATION=$DURATION
 LOGIN_WEIGHT=$LOGIN_WEIGHT
-BOOKMARKS_WEIGHT=$BOOKMARKS_WEIGHT
 EOF
 
         # locust exits non-zero if any request failed; keep going, it's in the csv
         uv run locust -f locust_load/basic_locust.py --headless \
-            -u "$USERS" -r "$SPAWN_RATE" -t "$DURATION" \
+            -u "$users" -r "$users" -t "$DURATION" \
             --csv="$outdir/locust" --html="$outdir/locust.html" || true
 
         stop_server
         wait "$logger_pid" 2>/dev/null || true # exits once the server is gone
     done
+  done
 done
 
 echo "done: $outroot"
