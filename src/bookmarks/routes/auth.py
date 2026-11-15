@@ -9,8 +9,15 @@ from starlette.exceptions import HTTPException
 from starlette.responses import JSONResponse
 
 from bookmarks.schemas import LoginRequest, UserCreate, user_table
-from bookmarks.settings import logger
+from bookmarks.settings import BCRYPT_IN_THREADPOOL, logger
 from bookmarks.token import issue_token
+
+
+async def run_bcrypt(func, **kwargs):
+    """Threadpool or event loop, per BCRYPT_IN_THREADPOOL."""
+    if BCRYPT_IN_THREADPOOL:
+        return await run_in_threadpool(func, **kwargs)
+    return func(**kwargs)
 
 
 class AuthRegister(HTTPEndpoint):
@@ -22,7 +29,9 @@ class AuthRegister(HTTPEndpoint):
             # password -> bytes -> gen salt -> hash it all
             password_bytes = new_user.password.encode("utf-8")
             salt = bcrypt.gensalt()
-            hashed_w_salt = bcrypt.hashpw(password=password_bytes, salt=salt)
+            hashed_w_salt = await run_bcrypt(
+                bcrypt.hashpw, password=password_bytes, salt=salt
+            )
 
             new_user_result = await conn.execute(
                 insert(user_table)
@@ -61,8 +70,8 @@ class AuthLogin(HTTPEndpoint):
             if login_user_result is None:
                 raise HTTPException(401)
 
-            # checking password -> now concurrent
-            if await run_in_threadpool(
+            # checking password
+            if await run_bcrypt(
                 bcrypt.checkpw,
                 password=login_user_creds_request.password.encode("utf-8"),
                 hashed_password=login_user_result["hashed_pw"].encode("utf-8"),

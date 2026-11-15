@@ -31,6 +31,12 @@ DB_USER = os.getenv("DB_USER")
 DB_NAME = os.getenv("DB_NAME")
 DATABASE_URL = os.getenv("DATABASE_URL")
 
+# bcrypt: worker thread (true) or event loop -> (false)
+bcrypt_flag = os.getenv("BCRYPT_IN_THREADPOOL", "true").lower()
+if bcrypt_flag not in ("true", "false"):
+    raise ValueError("BCRYPT_IN_THREADPOOL must be true or false")
+BCRYPT_IN_THREADPOOL = bcrypt_flag == "true"
+
 # tokens env
 
 JWT_SECRET = os.environ["JWT_SECRET"]

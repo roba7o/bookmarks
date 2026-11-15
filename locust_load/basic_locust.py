@@ -11,6 +11,9 @@ BASEURL = "http://localhost:8000"
 token_email = os.getenv("TEST_DB_EMAIL")
 token_pass = os.getenv("TEST_DB_PW")
 
+LOGIN_WEIGHT = int(os.getenv("LOGIN_WEIGHT", "1"))
+BOOKMARKS_WEIGHT = int(os.getenv("BOOKMARKS_WEIGHT", "3"))
+
 
 class BookmarkAuthUser(HttpUser):
     wait_time = between(1, 2)
@@ -48,7 +51,12 @@ class BookmarkAuthUser(HttpUser):
     def on_start(self):
         self.get_token()
 
-    @task
+    @task(LOGIN_WEIGHT)
+    def login(self):
+        """Repeated login -> keeps bcrypt actuallyunder load"""
+        self.get_token()
+
+    @task(BOOKMARKS_WEIGHT)
     def authenticated_request(self):
         """Make a reqest with jwt token"""
         token = self.token  # in case its been an hour since on_start()
