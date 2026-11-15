@@ -29,4 +29,5 @@ select = ["E", "F", "I"]
 dev = [
     "ipython>=9.15.0",
     "locust>=2.46.3",
+    "psutil>=7.2.2",
 ]
